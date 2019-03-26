@@ -1,34 +1,8 @@
-
-def compute_link_weight_delay(graph):
-    """
-    This function will update the edges of the graph based on delay metric
-    """
-    pass
-
-
-def compute_link_weight_energy(graph):
-    """
-    This function will update the edges of the graph based on energy metric
-    """
-    pass
-
-
-def compute_link_weight_split(graph):
-    """
-    This function will update the edges of the graph based on split (icnc) metric
-    """
-    pass
-
-
-def compute_link_weight_hop(graph):
-    """
-    This function will update the edges of the graph based on hop count metric
-    """
-    pass
-
-def get_state_from_source(graph, source=0, hops=1):
-    """
-    This will basically return the ground truth data for the ML algo.
-    Hops = the radius from source node to gather the data
-    """
-    pass
+def parse_trace_line(line):
+    frame_index, frame_type, frame_time, frame_size = [x for x in line.rstrip("\n\r").split('\t') if x]
+    return {
+        'frame_index': int(frame_index),
+        'frame_size': int(frame_size),
+        'frame_type': frame_type,
+        'frame_time': int(frame_time),
+    }
