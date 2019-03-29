@@ -119,6 +119,11 @@ with open(trace_file) as f:
         i+=1
 
 
-# save to dataset to metric.__name__+".csv"
+# save to dataset to metric.__name__+".json"
 with open(metric.__name__+".json", 'w') as f:
     json.dump(state, f)
+
+"""
+To-do:
+instead of saving entire dataset, save directly the samples/labels I want to try out!
+"""
