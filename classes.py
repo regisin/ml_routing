@@ -131,15 +131,16 @@ class Network():
 
     def add_link(self, link=None):
         self.links.append(link)
-
-    """
-    Node/Link State related methods
-    """
+    
     def get_link_by_ids(self, _from_id, _to_id):
         for link in self.links:
             if link._from.id == _from_id and link._to.id == _to_id:
                 return link
         return None
+
+    """
+    Node/Link State related methods
+    """
     def get_all_out_links_from_node_id(self, _id):
         links = []
         for link in self.links:
@@ -163,7 +164,35 @@ class Network():
         for link in self.links:
             link.update_state(frame)
 
-    
+    def remove_dead_nodes(self, callback, threshold=0.0):
+        def is_node_dead(node):
+            return node.remaining_energy <= threshold
+        for node in self.nodes:
+            if is_node_dead(node):
+                self.links.remove(self.get_all_out_links_from_node_id(node.id))
+                self.links.remove(self.get_all_in_links_from_node_id(node.id))
+        self.nodes = set(filter(is_node_dead, self.nodes))
+        callback()
+
+
+    def get_out_neighborhood_set(self, _id, hops=1):
+        links = self.get_all_out_links_from_node_id(_id)
+        nbs=set()
+        for link in links:
+            nbs.add(link._to.id)
+        return nbs
+
+    def get_in_neighborhood_set(self, _id, hops=1):
+        links = self.get_all_in_links_from_node_id(_id)
+        nbs=set()
+        for link in links:
+            nbs.add(link._from.id)
+        return nbs
+
+
+    """
+    Retrieve entire network state
+    """
     def get_state(self):
         n_state = []
         for node in self.nodes:

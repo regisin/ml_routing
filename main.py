@@ -48,6 +48,10 @@ z = 0.0
 n = Network()
 square_size = 4
 
+# dead node found
+def dead_node_removed():
+    pass
+
 # function that updates a link cost
 def metric_hop(link):
     return 1
@@ -104,6 +108,7 @@ with open(trace_file) as f:
         # - - update link metric
         # - - update node energy (all in the path (times one for src/dst, only send OR recv), use UP current (times 2, recv and relay); rest, use DOWN/IDLE current)
         n.update_state(frame)
+        n.remove_dead_nodes(dead_node_removed)
         
         
         state.append({
