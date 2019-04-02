@@ -3,8 +3,9 @@
 # compute dijkstra+update network state for each packet
 import csv
 import json
-
+import pandas as pd
 from classes import Node, Link, Network
+from utils import parse_trace_line
 
 """
 Topology: 7x7 evenly spaced grid
@@ -65,7 +66,7 @@ def metric_distance(link):
 def metric_destination_energy(link):
     if link._to.remaining_energy <= 0.0:
         return float('inf')
-    return link._to.remaining_energy ** -1 # less energy => large cost
+    return link._to.remaining_energy ** -1.0 # less energy => large cost
 
 metric = metric_hop
 
@@ -90,7 +91,9 @@ for i in range(square_size):
         if j+1 < square_size:
             n.add_link(link=Link(metric, _from=node, _to=n.get_node_by_id(int(str(i) + str(j+1)))))
 
-from utils import parse_trace_line
+
+train=pd.DataFrame([], columns=['local_remaining_energy','local_current_up','local_up_current','local_down_current','local_in_degree','local_out_degree','frame_type','frame_size'])
+target=pd.DataFrame([], columns=[])
 
 state = []
 with open(trace_file) as f:
@@ -99,7 +102,7 @@ with open(trace_file) as f:
         frame = parse_trace_line(line)
         # "transmit the frame"
         # - calculate shortest path
-        _, path = n.shortest_path(source=n.get_node_by_id(SOURCE), destination=n.get_node_by_id(DESTINATION))
+        cost, path = n.shortest_path(source=n.get_node_by_id(SOURCE), destination=n.get_node_by_id(DESTINATION))
         # - save network state (topology, node state, link state, frame)
         for node in n.nodes:
             node.current_up=True if node.id in path else False
@@ -110,25 +113,27 @@ with open(trace_file) as f:
         n.update_state(frame)
         n.remove_dead_nodes(dead_node_removed)
         
-        
-        state.append({
-            'step':i,
-            'frame':frame,
-            'node_states': n_state,
-            'link_state': l_state,
-            'source_node_id': SOURCE,
-            'source_node_id': DESTINATION,
-            'path': path
-        })
+        #features: idx,local_remaining_energy,local_current_up,local_up_current,local_down_current,local_in_degree,local_out_degree,frame_type,frame_size
+        #labels: nbh_pct_remaining_energy,nbh_pct_distance,
+
+        # state.append({
+        #     'step':i,
+        #     'frame':frame,
+        #     'node_states': n_state,
+        #     'link_state': l_state,
+        #     'source_node_id': SOURCE,
+        #     'source_node_id': DESTINATION,
+        #     'path': path
+        # })
         # next
         i+=1
 
 
-# save to dataset to metric.__name__+".json"
-with open(metric.__name__+".json", 'w') as f:
-    json.dump(state, f)
+# # save to dataset to metric.__name__+".json"
+# with open(metric.__name__+".json", 'w') as f:
+#     json.dump(state, f)
 
-"""
-To-do:
-instead of saving entire dataset, save directly the samples/labels I want to try out!
-"""
+# """
+# To-do:
+# instead of saving entire dataset, save directly the samples/labels I want to try out!
+# """

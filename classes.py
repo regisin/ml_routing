@@ -39,7 +39,6 @@ class Link():
         self.error_probability=error_probability
         self.datarate=datarate
         self._metric = metric
-
         self.update_state(None)
 
     # might be useful for mobile networks
@@ -80,7 +79,7 @@ class Network():
         for link in self.links:
             distances[(link._from.id, link._to.id)] = link.metric
         return distances
-    
+
     def dijkstra(self, _from):
         visited = {_from: 0}
         path = {}
@@ -175,19 +174,44 @@ class Network():
         callback()
 
 
-    def get_out_neighborhood_set(self, _id, hops=1):
-        links = self.get_all_out_links_from_node_id(_id)
-        nbs=set()
-        for link in links:
-            nbs.add(link._to.id)
-        return nbs
+    # def get_out_neighborhood_set(self, _id, hops=1):
+    #     queue=set([])
+    #     for i in range(hops-1):
+    #         for p in queue:
+    #             queue = queue | set([l._to.id for l self.get_all_out_links_from_node_id(node_id)])
 
-    def get_in_neighborhood_set(self, _id, hops=1):
-        links = self.get_all_in_links_from_node_id(_id)
-        nbs=set()
-        for link in links:
-            nbs.add(link._from.id)
-        return nbs
+
+
+
+
+
+    #     h = hops
+    #     if h <= 0: return set([])
+
+    #     prev=set([l._to.id for l self.get_all_out_links_from_node_id(_id)])
+    #     last=set()
+    #     while not h == 0:
+    #         for node_id in prev:
+    #             prev = prev | set([l._to.id for l self.get_all_out_links_from_node_id(node_id)])
+    #         if 
+
+        
+
+    #     nodes = self._get_nodes()
+
+    #     # Mark all the vertices as not visited
+    #     visited = [False] * (len(self.nodes)) 
+    #     # Create a queue for BFS 
+    #     queue = []
+    #     queue.append(_id)
+    #     visited[nodes.index(_id)] = True
+    #     while queue:
+    #         s = queue.pop(0)
+    #         for i in [l._to.id for l in self.get_all_out_links_from_node_id(s)]:
+    #             if visited[nodes.index(i)] == False: 
+    #                 queue.append(i)
+    #                 visited[nodes.index(_id)] = True
+
 
 
     """

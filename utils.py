@@ -9,3 +9,7 @@ def parse_trace_line(line):
 
 def distance(a,b):
     return ( (a[0]-b[0])**2 + (a[1]-b[1])**2 + (a[2]-b[2])**2 )**0.5
+
+# def percentage_label(network, source, cost, path):
+#     next_hop = path[1]
+#     pass
