@@ -76,7 +76,6 @@ metric = metric_hop
 #
 for i in range(square_size):
     for j in range(square_size):
-        print(i,j)
         n.add_node(node=Node(_id=int(str(i) + str(j)), position=(i*100.0, j*100.0, z)))
 
 for i in range(square_size):

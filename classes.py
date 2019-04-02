@@ -13,28 +13,7 @@ class Node():
         self.down_current = down_current
         self.frame_of_death=None
         self.current_up = False # 0/false=down, 1/true=up
-    def __eq__(self, other):
-        return  (self.id==other.id
-                and self.x==other.x
-                and self.y==other.y
-                and self.z==other.z
-                and self.initial_charge==other.initial_charge
-                and self.remaining_energy==other.remaining_energy
-                and self.up_current == other.up_current
-                and self.down_current == other.down_current
-                and self.frame_of_death==other.frame_of_death
-                and self.current_up == other.current_up)
-    def __ne__(self, other):
-        return  (self.id!=other.id
-                or self.x!=other.x
-                or self.y!=other.y
-                or self.z!=other.z
-                or self.initial_charge!=other.initial_charge
-                or self.remaining_energy!=other.remaining_energy
-                or self.up_current != other.up_current
-                or self.down_current != other.down_current
-                or self.frame_of_death!=other.frame_of_death
-                or self.current_up != other.current_up)
+
 
     def update_state(self, frame, link):
         drain_current = self.down_current
@@ -62,20 +41,6 @@ class Link():
         self.datarate=datarate
         self._metric = metric
         self.update_state(None)
-    def __eq__(self, other):
-        return  (self._from==other._from
-                and self._to==other._to
-                and self.error_probability==other.error_probability
-                and self.datarate==other.datarate
-                and self._metric==other._metric
-                and self.metric==other.metric)
-    def __ne__(self, other):
-        return  (self._from!=other._from
-                or self._to!=other._to
-                or self.error_probability!=other.error_probability
-                or self.datarate!=other.datarate
-                or self._metric!=other._metric
-                or self.metric!=other.metric)
                 
     # might be useful for mobile networks
     def update_distance(self):
@@ -96,12 +61,6 @@ class Network():
     def __init__(self):
         self.nodes=set()
         self.links=[]
-    def __eq__(self, other):
-        return  (self.nodes==other.nodes
-                and self.links==other.links)
-    def __ne__(self, other):
-        return  (self.nodes!=other.nodes
-                or self.links!=other.links)
 
     """
     Helper methods, used internally
@@ -222,10 +181,16 @@ class Network():
         previous = self.get_out_nth_neighborhood_set(_id, hops=hops-1)
         current = set()
         for node in previous:
-            links = self.get_all_out_links_from_node_id(node.id)
+            links = self.get_all_out_links_from_node_id(node)
             for l in links:
                 current.add(l._to)
         return current - previous
+
+
+
+
+
+
     def get_in_nth_neighborhood_set(self, _id, hops=1):
         if hops == 1:
             links = self.get_all_in_links_from_node_id(_id)
@@ -233,10 +198,10 @@ class Network():
         previous = self.get_in_nth_neighborhood_set(_id, hops=hops-1)
         current = set()
         for node in previous:
-            links = self.get_all_in_links_from_node_id(node.id)
+            links = self.get_all_in_links_from_node_id(node)
             for l in links:
                 current.add(l._to)
-        return current - previous
+        return current
 
     """
     Retrieve entire network state
