@@ -2,13 +2,14 @@ from utils import distance as _distance
 from collections import defaultdict, deque
 
 class Node():
-    def __init__(self, _id=None, position=(.0,.0,.0), initial_charge=1000.0, up_current=1.0, down_current=0.5):
+    def __init__(self, _id=None, position=(.0,.0,.0), initial_charge=100.0, up_current=1.0, down_current=0.5):
         self.id=_id
         self.x=position[0]
         self.y=position[1]
         self.z=position[2]
         self.initial_charge=initial_charge
-        self.remaining_energy=1.0
+        self.remaining_charge = initial_charge
+        self.remaining_energy = 1.0
         self.up_current = up_current
         self.down_current = down_current
         self.frame_of_death=None
@@ -24,6 +25,7 @@ class Node():
         frame_size = frame['frame_size']
         t = (frame_size * 8) / (datarate * 1000000) # seconds
         deplete_charge = current_charge - (t * drain_current)
+        self.remaining_charge = current_charge - deplete_charge
         perc=0.0
         if self.initial_charge > 0.0:
             perc = (current_charge - deplete_charge) / self.initial_charge
@@ -80,6 +82,55 @@ class Network():
         for link in self.links:
             distances[(link._from.id, link._to.id)] = link.metric
         return distances
+
+    def get_out_nth_neighborhood_set(self, _from, hops=1):
+        visited = set()
+        queue = deque([_from, None])
+
+        level = 0
+        nbh=set([])
+        
+        while queue:
+            vertex = queue.popleft()
+            if vertex == None:
+                queue.append(None)
+                level += 1
+                if queue[0] == None:
+                    return nbh
+                else:
+                    continue
+            
+            for link in self.get_all_out_links_from_node_id(vertex):
+                nb = link._to.id
+                if nb not in visited:
+                    visited.add(nb)
+                    queue.append(nb)
+                    if level+1 == hops: nbh.add(nb)
+                    elif level+1 > hops: return nbh
+
+    def get_in_nth_neighborhood_set(self, _from, hops=1):
+        visited = set()
+        queue = deque([_from, None])
+
+        level = 0
+        nbh=set([])
+        
+        while queue:
+            vertex = queue.popleft()
+            if vertex == None:
+                queue.append(None)
+                level += 1
+                if queue[0] == None:
+                    return nbh
+                else:
+                    continue
+            for link in self.get_all_in_links_from_node_id(vertex):
+                nb = link._from.id
+                if nb not in visited:
+                    visited.add(nb)
+                    queue.append(nb)
+                    if level+1 == hops: nbh.add(nb)
+                    elif level+1 > hops: return nbh
 
     def dijkstra(self, _from):
         visited = {_from: 0}
@@ -173,35 +224,6 @@ class Network():
                 self.links.remove(self.get_all_in_links_from_node_id(node.id))
         self.nodes = set(filter(is_node_dead, self.nodes))
         callback()
-
-    def get_out_nth_neighborhood_set(self, _id, hops=1):
-        if hops == 1:
-            links = self.get_all_out_links_from_node_id(_id)
-            return set([l._to for l in links])
-        previous = self.get_out_nth_neighborhood_set(_id, hops=hops-1)
-        current = set()
-        for node in previous:
-            links = self.get_all_out_links_from_node_id(node)
-            for l in links:
-                current.add(l._to)
-        return current - previous
-
-
-
-
-
-
-    def get_in_nth_neighborhood_set(self, _id, hops=1):
-        if hops == 1:
-            links = self.get_all_in_links_from_node_id(_id)
-            return set([l._to for l in links])
-        previous = self.get_in_nth_neighborhood_set(_id, hops=hops-1)
-        current = set()
-        for node in previous:
-            links = self.get_all_in_links_from_node_id(node)
-            for l in links:
-                current.add(l._to)
-        return current
 
     """
     Retrieve entire network state

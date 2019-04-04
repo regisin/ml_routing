@@ -4,8 +4,12 @@
 import csv
 import json
 import pandas as pd
+import numpy as np
 from classes import Node, Link, Network
-from utils import parse_trace_line
+from utils import parse_trace_line, get_agg_in_degree, get_agg_out_degree,\
+                    get_agg_initial_charge, get_agg_remaining_energy, get_agg_remaining_charge,\
+                    sort_by_remaining_energy, sort_by_initial_charge, sort_by_remaining_charge,\
+                    pct_label
 
 """
 Topology: 7x7 evenly spaced grid
@@ -68,7 +72,7 @@ def metric_destination_energy(link):
         return float('inf')
     return link._to.remaining_energy ** -1.0 # less energy => large cost
 
-metric = metric_hop
+metric = metric_destination_energy
 
 
 #
@@ -90,11 +94,7 @@ for i in range(square_size):
         if j+1 < square_size:
             n.add_link(link=Link(metric, _from=node, _to=n.get_node_by_id(int(str(i) + str(j+1)))))
 
-
-train=pd.DataFrame([], columns=['local_remaining_energy','local_current_up','local_up_current','local_down_current','local_in_degree','local_out_degree','frame_type','frame_size'])
-target=pd.DataFrame([], columns=[])
-
-state = []
+samples = pd.DataFrame()
 with open(trace_file) as f:
     i = 0
     for line in f:
@@ -105,34 +105,70 @@ with open(trace_file) as f:
         # - save network state (topology, node state, link state, frame)
         for node in n.nodes:
             node.current_up=True if node.id in path else False
-        n_state, l_state = n.get_state()
-        # - update state of network (nodes in the path/outside the path, deplete energy according to state)
-        # - - update link metric
-        # - - update node energy (all in the path (times one for src/dst, only send OR recv), use UP current (times 2, recv and relay); rest, use DOWN/IDLE current)
-        n.update_state(frame)
-        n.remove_dead_nodes(dead_node_removed)
         
-        #features: idx,local_remaining_energy,local_current_up,local_up_current,local_down_current,local_in_degree,local_out_degree,frame_type,frame_size
-        #labels: nbh_pct_remaining_energy,nbh_pct_distance,
+        # generate state and/or sample entries
+        # n_state, l_state = n.get_state()
+        nbh_1_out = n.get_out_nth_neighborhood_set(SOURCE, hops=1)
+        nbh_2_out = n.get_out_nth_neighborhood_set(SOURCE, hops=2)
+        nbh_3_out = n.get_out_nth_neighborhood_set(SOURCE, hops=3)
 
-        # state.append({
-        #     'step':i,
-        #     'frame':frame,
-        #     'node_states': n_state,
-        #     'link_state': l_state,
-        #     'source_node_id': SOURCE,
-        #     'source_node_id': DESTINATION,
-        #     'path': path
-        # })
-        # next
+        num_1 = len(nbh_1_out)
+        num_2 = len(nbh_2_out)
+        num_3 = len(nbh_3_out)
+
+
+        agg_1_re_out = get_agg_remaining_energy(n, nbh_1_out)
+        agg_2_re_out = get_agg_remaining_energy(n, nbh_2_out)
+        agg_3_re_out = get_agg_remaining_energy(n, nbh_3_out)
+
+        agg_1_ic_out = get_agg_initial_charge(n, nbh_1_out)
+        agg_2_ic_out = get_agg_initial_charge(n, nbh_2_out)
+        agg_3_ic_out = get_agg_initial_charge(n, nbh_3_out)
+
+        agg_1_rc_out = get_agg_remaining_charge(n, nbh_1_out)
+        agg_2_rc_out = get_agg_remaining_charge(n, nbh_2_out)
+        agg_3_rc_out = get_agg_remaining_charge(n, nbh_3_out)
+        
+        next_hop_node = n.get_node_by_id(path[1])
+
+        label_re = pct_label(sort_by_remaining_energy(n, nbh_1_out), next_hop_node)
+        label_ic = pct_label(sort_by_initial_charge(n, nbh_1_out), next_hop_node)
+        label_rc = pct_label(sort_by_remaining_charge(n, nbh_1_out), next_hop_node)
+
+        sample={
+            'frame_type':frame['frame_type'],
+            'frame_size':frame['frame_size'],
+            # 'local_remaining_energy': n.get_node_by_id(SOURCE).remaining_energy,
+            # 'local_remaining_energy': n.get_node_by_id(SOURCE).remaining_energy,
+            # 'local_remaining_energy': n.get_node_by_id(SOURCE).remaining_energy,
+            'sum_1hop_remaining_energy':agg_1_re_out,
+            'sum_1hop_initial_charge':agg_1_ic_out,
+            'sum_1hop_remaining_charge':agg_1_rc_out,
+            'size_1hop':num_1,
+            'sum_2hop_remaining_energy':agg_2_re_out,
+            'sum_2hop_initial_charge':agg_2_ic_out,
+            'sum_2hop_remaining_charge':agg_2_rc_out,
+            'size_2hop':num_2,
+            'sum_3hop_remaining_energy':agg_3_re_out,
+            'sum_3hop_initial_charge':agg_3_ic_out,
+            'sum_3hop_remaining_charge':agg_3_rc_out,
+            'size_3hop':num_3,
+            'label_remaining_energy':label_re,
+            'label_initial_charge':label_ic,
+            'label_remaining_charge':label_rc
+        }
+
+        samples = samples.append(sample, ignore_index=True)
+
+        # update network state for next round
+        n.update_state(frame)
+        # n.remove_dead_nodes(dead_node_removed)
+
+        # i = step in trace file = frame index... not really used for now
         i+=1
+samples.to_csv('___.csv')
 
 
 # # save to dataset to metric.__name__+".json"
 # with open(metric.__name__+".json", 'w') as f:
 #     json.dump(state, f)
-
-# """
-# To-do:
-# instead of saving entire dataset, save directly the samples/labels I want to try out!
-# """
