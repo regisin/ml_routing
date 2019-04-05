@@ -59,7 +59,7 @@ def dead_node_removed():
 
 # function that updates a link cost
 def metric_hop(link):
-    return 1
+    return 1.0
 def metric_datarate(link):
     return link.datarate
 def metric_error(link):
@@ -70,7 +70,8 @@ def metric_distance(link):
 def metric_destination_energy(link):
     if link._to.remaining_energy <= 0.0:
         return float('inf')
-    return link._to.remaining_energy ** -1.0 # less energy => large cost
+    re = link._to.remaining_energy
+    return (re ** -1.0) # less energy => large cost
 
 metric = metric_destination_energy
 
@@ -80,7 +81,7 @@ metric = metric_destination_energy
 #
 for i in range(square_size):
     for j in range(square_size):
-        n.add_node(node=Node(_id=int(str(i) + str(j)), position=(i*100.0, j*100.0, z)))
+        n.add_node(node=Node(_id=int(str(i) + str(j)), position=(i*100.0, j*100.0, z), initial_charge=200.0, up_current=1.5, down_current=0.5))
 
 for i in range(square_size):
     for j in range(square_size):
@@ -102,6 +103,7 @@ with open(trace_file) as f:
         # "transmit the frame"
         # - calculate shortest path
         cost, path = n.shortest_path(source=n.get_node_by_id(SOURCE), destination=n.get_node_by_id(DESTINATION))
+        print('Path:',path,' = Cost: ', cost)
         # - save network state (topology, node state, link state, frame)
         for node in n.nodes:
             node.current_up=True if node.id in path else False
@@ -166,7 +168,8 @@ with open(trace_file) as f:
 
         # i = step in trace file = frame index... not really used for now
         i+=1
-samples.to_csv('___.csv')
+        if i == 1000: break
+samples.to_csv('___.csv', index=False)
 
 
 # # save to dataset to metric.__name__+".json"

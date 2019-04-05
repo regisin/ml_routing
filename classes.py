@@ -26,11 +26,12 @@ class Node():
         t = (frame_size * 8) / (datarate * 1000000) # seconds
         deplete_charge = current_charge - (t * drain_current)
         self.remaining_charge = current_charge - deplete_charge
+
         perc=0.0
         if self.initial_charge > 0.0:
             perc = (current_charge - deplete_charge) / self.initial_charge
-        
-        self.initial_charge -= perc
+        self.remaining_energy -= perc
+
         if self.initial_charge <= 0.0:
             self.initial_charge = 0.0
             self.frame_of_death=frame['frame_index']
@@ -41,6 +42,7 @@ class Link():
         self._to=_to
         self.error_probability=error_probability
         self.datarate=datarate
+        self.metric = float('inf')
         self._metric = metric
         self.update_state(None)
                 
@@ -54,7 +56,7 @@ class Link():
     def update_state(self, frame):
         self.update_distance()
         self.update_metric()
-        if not frame == None:
+        if frame != None:
             self._from.update_state(frame, self)
             self._to.update_state(frame, self)
 

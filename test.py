@@ -60,38 +60,36 @@ class TestNetworkMethods(unittest.TestCase):
 
     def test_out_neighborhood_set(self):
         def metric(link):
-            n0 = link._from.id
-            n1 = link._to.id
-            if n0 == 0 and n1 == 1: return 1
-            if n0 == 0 and n1 == 10: return 1
-            if n0 == 1 and n1 == 11: return 1
-            if n0 == 10 and n1 == 11: return 1
-            if n0 == 11 and n1 == 2: return 1
-            if n0 == 2 and n1 == 3: return 1
-            if n0 == 10 and n1 == 4: return 99
-            return 99
+            return 1
         n = Network()
         n.add_node(node=Node(_id=0))
         n.add_node(node=Node(_id=1))
+        n.add_node(node=Node(_id=2))
         n.add_node(node=Node(_id=10))
         n.add_node(node=Node(_id=11))
-        n.add_node(node=Node(_id=2))
-        n.add_node(node=Node(_id=3))
-        n.add_node(node=Node(_id=4))
+        n.add_node(node=Node(_id=12))
+        n.add_node(node=Node(_id=20))
+        n.add_node(node=Node(_id=21))
+        n.add_node(node=Node(_id=22))
+        
         n.add_link(link=Link(metric, _from=n.get_node_by_id(0), _to=n.get_node_by_id(1)))
+        n.add_link(link=Link(metric, _from=n.get_node_by_id(1), _to=n.get_node_by_id(2)))
+        n.add_link(link=Link(metric, _from=n.get_node_by_id(10), _to=n.get_node_by_id(11)))
+        n.add_link(link=Link(metric, _from=n.get_node_by_id(11), _to=n.get_node_by_id(12)))
+        n.add_link(link=Link(metric, _from=n.get_node_by_id(20), _to=n.get_node_by_id(21)))
+        n.add_link(link=Link(metric, _from=n.get_node_by_id(21), _to=n.get_node_by_id(22)))
+        
         n.add_link(link=Link(metric, _from=n.get_node_by_id(0), _to=n.get_node_by_id(10)))
-
+        n.add_link(link=Link(metric, _from=n.get_node_by_id(10), _to=n.get_node_by_id(20)))
         n.add_link(link=Link(metric, _from=n.get_node_by_id(1), _to=n.get_node_by_id(11)))
-
-        n.add_link(link=Link(metric, _from=n.get_node_by_id(11), _to=n.get_node_by_id(2)))
-        n.add_link(link=Link(metric, _from=n.get_node_by_id(2), _to=n.get_node_by_id(3)))
-
-        n.add_link(link=Link(metric, _from=n.get_node_by_id(10), _to=n.get_node_by_id(4)))
+        n.add_link(link=Link(metric, _from=n.get_node_by_id(11), _to=n.get_node_by_id(21)))
+        n.add_link(link=Link(metric, _from=n.get_node_by_id(2), _to=n.get_node_by_id(12)))
+        n.add_link(link=Link(metric, _from=n.get_node_by_id(12), _to=n.get_node_by_id(22)))
         
         self.assertEqual(n.get_out_nth_neighborhood_set(0, hops=1), set([1,10]))
-        self.assertEqual(n.get_out_nth_neighborhood_set(0, hops=2), set([11,4]))
-        self.assertEqual(n.get_out_nth_neighborhood_set(0, hops=3), set([2]))
-        self.assertEqual(n.get_out_nth_neighborhood_set(0, hops=4), set([3]))
+        self.assertEqual(n.get_out_nth_neighborhood_set(0, hops=2), set([2,11,20]))
+        self.assertEqual(n.get_out_nth_neighborhood_set(0, hops=3), set([12,21]))
+        self.assertEqual(n.get_out_nth_neighborhood_set(0, hops=4), set([22]))
         self.assertEqual(n.get_out_nth_neighborhood_set(0, hops=5), set([]))
 
     def test_in_neighborhood_set(self):
