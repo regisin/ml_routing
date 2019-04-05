@@ -217,15 +217,23 @@ class Network():
         for link in self.links:
             link.update_state(frame)
 
-    def remove_dead_nodes(self, callback, threshold=0.0):
-        def is_node_dead(node):
-            return node.remaining_energy <= threshold
-        for node in self.nodes:
-            if is_node_dead(node):
-                self.links.remove(self.get_all_out_links_from_node_id(node.id))
-                self.links.remove(self.get_all_in_links_from_node_id(node.id))
-        self.nodes = set(filter(is_node_dead, self.nodes))
-        callback()
+    def remove_dead_nodes(self, callback, threshold=0.0, exception=set()):
+        pass
+        # def is_node_dead(exception):
+        #     def is_dead(node):
+        #         return (node.remaining_energy <= threshold and not node.id in exception)
+        #     return is_dead
+        # my_filter = is_node_dead(exception)
+        # for node in self.nodes:
+        #     if is_node_dead(node) and not node in exception:
+        #         try:
+        #             self.links.remove(self.get_all_out_links_from_node_id(node.id))
+        #             self.links.remove(self.get_all_in_links_from_node_id(node.id))
+        #         except:
+        #             # Link already removed
+        #             pass
+        # self.nodes = set(filter(my_filter, self.nodes))
+        # callback()
 
     """
     Retrieve entire network state

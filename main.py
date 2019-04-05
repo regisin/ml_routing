@@ -43,7 +43,7 @@ x---x---x---x---x---x---x
 # Do this for ALL pairs
 # node id = ij (like in a matrix, ex 3x3= 0,1,2,10,11,12,20,21,22)
 SOURCE=0
-DESTINATION=33
+DESTINATION=66
 
 
 
@@ -51,7 +51,7 @@ trace_file='trace.dat'
 mtu=1500
 z = 0.0
 n = Network()
-square_size = 4
+square_size = 7
 
 # dead node found
 def dead_node_removed():
@@ -103,7 +103,7 @@ with open(trace_file) as f:
         # "transmit the frame"
         # - calculate shortest path
         cost, path = n.shortest_path(source=n.get_node_by_id(SOURCE), destination=n.get_node_by_id(DESTINATION))
-        print('Path:',path,' = Cost: ', cost)
+        # print('Path:',path,' = Cost: ', cost)
         # - save network state (topology, node state, link state, frame)
         for node in n.nodes:
             node.current_up=True if node.id in path else False
@@ -164,11 +164,10 @@ with open(trace_file) as f:
 
         # update network state for next round
         n.update_state(frame)
-        # n.remove_dead_nodes(dead_node_removed)
+        n.remove_dead_nodes(dead_node_removed, exception=set([SOURCE, DESTINATION]))
 
         # i = step in trace file = frame index... not really used for now
         i+=1
-        if i == 1000: break
 samples.to_csv('___.csv', index=False)
 
 
