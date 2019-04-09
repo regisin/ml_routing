@@ -2,7 +2,7 @@ from utils import distance as _distance
 from collections import defaultdict, deque
 
 class Node():
-    def __init__(self, _id=None, position=(.0,.0,.0), initial_charge=100.0, up_current=1.0, down_current=0.5):
+    def __init__(self, update_callback=None, _id=None, position=(.0,.0,.0), initial_charge=100.0, up_current=1.0, down_current=0.5):
         self.id=_id
         self.x=position[0]
         self.y=position[1]
@@ -12,8 +12,8 @@ class Node():
         self.remaining_energy = 1.0
         self.up_current = up_current
         self.down_current = down_current
-        self.frame_of_death=None
         self.current_up = False # 0/false=down, 1/true=up
+        self._update_cb=update_callback
 
 
     def update_state(self, frame, link):
@@ -34,7 +34,8 @@ class Node():
 
         if self.initial_charge <= 0.0:
             self.initial_charge = 0.0
-            self.frame_of_death=frame['frame_index']
+        if self._update_cb:
+            self._update_cb(self)
 
 class Link():
     def __init__(self, metric, _from=Node(), _to=Node(), error_probability=0.1, datarate=1.0):
@@ -80,11 +81,15 @@ class Network():
         return edges
     
     def _get_distances(self):
-        distances = {}
+        distances = defaultdict(lambda: float('inf'))#{}
         for link in self.links:
             distances[(link._from.id, link._to.id)] = link.metric
+        print(distances)
         return distances
 
+    """
+    Helper methods to create training samples
+    """
     def get_out_nth_neighborhood_set(self, _from, hops=1):
         visited = set()
         queue = deque([_from, None])
@@ -134,6 +139,9 @@ class Network():
                     if level+1 == hops: nbh.add(nb)
                     elif level+1 > hops: return nbh
 
+    """
+    Path finding methods
+    """
     def dijkstra(self, _from):
         visited = {_from: 0}
         path = {}
@@ -171,10 +179,12 @@ class Network():
         return visited[destination.id], list(full_path)
 
     """
-    Main methods
+    Manipulate network topology
     """
     def add_node(self, node=None):
         self.nodes.add(node)
+    def remove_node_by_id(self, _id):
+        self.nodes.discard(self.get_node_by_id(_id))
 
     def get_node_by_id(self, _id):
         for node in self.nodes:
@@ -184,7 +194,13 @@ class Network():
 
     def add_link(self, link=None):
         self.links.append(link)
+    def remove_link_by_ids(self, _from_id, _to_id):
+        link = self.get_link_by_ids(_from_id, _to_id)
+        if link in self.links:
+            self.links.remove(link)
     
+
+
     def get_link_by_ids(self, _from_id, _to_id):
         for link in self.links:
             if link._from.id == _from_id and link._to.id == _to_id:
@@ -216,24 +232,6 @@ class Network():
     def update_state(self, frame):
         for link in self.links:
             link.update_state(frame)
-
-    def remove_dead_nodes(self, callback, threshold=0.0, exception=set()):
-        pass
-        # def is_node_dead(exception):
-        #     def is_dead(node):
-        #         return (node.remaining_energy <= threshold and not node.id in exception)
-        #     return is_dead
-        # my_filter = is_node_dead(exception)
-        # for node in self.nodes:
-        #     if is_node_dead(node) and not node in exception:
-        #         try:
-        #             self.links.remove(self.get_all_out_links_from_node_id(node.id))
-        #             self.links.remove(self.get_all_in_links_from_node_id(node.id))
-        #         except:
-        #             # Link already removed
-        #             pass
-        # self.nodes = set(filter(my_filter, self.nodes))
-        # callback()
 
     """
     Retrieve entire network state

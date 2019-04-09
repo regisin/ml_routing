@@ -66,8 +66,3 @@ def pct_label(node_list, next_hop):
     index = node_list.index(next_hop)
     label = float(index)/float(total)
     return label
-
-
-# def percentage_label(network, source, cost, path):
-#     next_hop = path[1]
-#     pass

@@ -56,6 +56,27 @@ class TestNetworkMethods(unittest.TestCase):
         self.assertEqual(path[0], path_reverse[0])
         self.assertNotEqual(path[1], path_reverse[1])
         self.assertNotEqual(path[1], path_reverse[1].reverse())
+    
+    def test_disconected_graph(self):
+        def metric(link):
+            return 1
+        n = Network()
+        n.add_node(node=Node(_id=0))
+        n.add_node(node=Node(_id=1))
+        n.add_node(node=Node(_id=2))
+        # n.add_node(node=Node(_id=3))
+        # n.add_node(node=Node(_id=4))
+        n.add_link(link=Link(metric, _from=n.get_node_by_id(0), _to=n.get_node_by_id(1)))
+        n.add_link(link=Link(metric, _from=n.get_node_by_id(1), _to=n.get_node_by_id(2)))
+        # n.add_link(link=Link(metric, _from=n.get_node_by_id(3), _to=n.get_node_by_id(2)))
+
+        path = n.shortest_path(source=n.get_node_by_id(0), destination=n.get_node_by_id(2))
+        path_reverse = n.shortest_path(source=n.get_node_by_id(3), destination=n.get_node_by_id(2))
+        print(path, path_reverse)
+
+        # self.assertEqual(path[0], path_reverse[0])
+        # self.assertNotEqual(path[1], path_reverse[1])
+        # self.assertNotEqual(path[1], path_reverse[1].reverse())
 
 
     def test_out_neighborhood_set(self):

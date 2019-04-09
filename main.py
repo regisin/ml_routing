@@ -1,8 +1,3 @@
-# create network
-# load trace
-# compute dijkstra+update network state for each packet
-import csv
-import json
 import pandas as pd
 import numpy as np
 from classes import Node, Link, Network
@@ -53,9 +48,14 @@ z = 0.0
 n = Network()
 square_size = 7
 
-# dead node found
-def dead_node_removed():
-    pass
+# function that checks if node is dead
+THRESHOLD=0.05
+DEAD_NODE_FLAG=False
+def is_node_dead(node):
+    if node.remaining_energy <= THRESHOLD:
+        global DEAD_NODE_FLAG
+        DEAD_NODE_FLAG = True
+
 
 # function that updates a link cost
 def metric_hop(link):
@@ -75,13 +75,12 @@ def metric_destination_energy(link):
 
 metric = metric_destination_energy
 
-
 #
 # Create network/graph
 #
 for i in range(square_size):
     for j in range(square_size):
-        n.add_node(node=Node(_id=int(str(i) + str(j)), position=(i*100.0, j*100.0, z), initial_charge=200.0, up_current=1.5, down_current=0.5))
+        n.add_node(node=Node(is_node_dead, _id=int(str(i) + str(j)), position=(i*100.0, j*100.0, z), initial_charge=200.0, up_current=1.5, down_current=0.5))
 
 for i in range(square_size):
     for j in range(square_size):
@@ -97,9 +96,13 @@ for i in range(square_size):
 
 samples = pd.DataFrame()
 with open(trace_file) as f:
-    i = 0
     for line in f:
         frame = parse_trace_line(line)
+
+        # print('findex',frame['frame_index'])
+
+        # if frame['frame_index'] % 3 == 0: break
+
         # "transmit the frame"
         # - calculate shortest path
         cost, path = n.shortest_path(source=n.get_node_by_id(SOURCE), destination=n.get_node_by_id(DESTINATION))
@@ -108,69 +111,69 @@ with open(trace_file) as f:
         for node in n.nodes:
             node.current_up=True if node.id in path else False
         
-        # generate state and/or sample entries
-        # n_state, l_state = n.get_state()
-        nbh_1_out = n.get_out_nth_neighborhood_set(SOURCE, hops=1)
-        nbh_2_out = n.get_out_nth_neighborhood_set(SOURCE, hops=2)
-        nbh_3_out = n.get_out_nth_neighborhood_set(SOURCE, hops=3)
+        next_hop_index = 1
+        for node_id in path[0:-1]:
+            node = n.get_node_by_id(node_id)
+            local_initial_charge = node.initial_charge
+            local_remaining_charge = node.remaining_charge
 
-        num_1 = len(nbh_1_out)
-        num_2 = len(nbh_2_out)
-        num_3 = len(nbh_3_out)
+#
+            nbh_1_out = n.get_out_nth_neighborhood_set(node_id, hops=1)
+            nbh_2_out = n.get_out_nth_neighborhood_set(node_id, hops=2)
+            nbh_3_out = n.get_out_nth_neighborhood_set(node_id, hops=3)
 
+            num_1 = len(nbh_1_out)
+            num_2 = len(nbh_2_out)
+            num_3 = len(nbh_3_out)
 
-        agg_1_re_out = get_agg_remaining_energy(n, nbh_1_out)
-        agg_2_re_out = get_agg_remaining_energy(n, nbh_2_out)
-        agg_3_re_out = get_agg_remaining_energy(n, nbh_3_out)
+            agg_1_re_out = get_agg_remaining_energy(n, nbh_1_out)
+            agg_2_re_out = get_agg_remaining_energy(n, nbh_2_out)
+            agg_3_re_out = get_agg_remaining_energy(n, nbh_3_out)
 
-        agg_1_ic_out = get_agg_initial_charge(n, nbh_1_out)
-        agg_2_ic_out = get_agg_initial_charge(n, nbh_2_out)
-        agg_3_ic_out = get_agg_initial_charge(n, nbh_3_out)
+            agg_1_ic_out = get_agg_initial_charge(n, nbh_1_out)
+            agg_2_ic_out = get_agg_initial_charge(n, nbh_2_out)
+            agg_3_ic_out = get_agg_initial_charge(n, nbh_3_out)
 
-        agg_1_rc_out = get_agg_remaining_charge(n, nbh_1_out)
-        agg_2_rc_out = get_agg_remaining_charge(n, nbh_2_out)
-        agg_3_rc_out = get_agg_remaining_charge(n, nbh_3_out)
-        
-        next_hop_node = n.get_node_by_id(path[1])
+            agg_1_rc_out = get_agg_remaining_charge(n, nbh_1_out)
+            agg_2_rc_out = get_agg_remaining_charge(n, nbh_2_out)
+            agg_3_rc_out = get_agg_remaining_charge(n, nbh_3_out)
+            
+            next_hop_node = n.get_node_by_id(path[next_hop_index])
+            next_hop_index += 1
 
-        label_re = pct_label(sort_by_remaining_energy(n, nbh_1_out), next_hop_node)
-        label_ic = pct_label(sort_by_initial_charge(n, nbh_1_out), next_hop_node)
-        label_rc = pct_label(sort_by_remaining_charge(n, nbh_1_out), next_hop_node)
+            label_re = pct_label(sort_by_remaining_energy(n, nbh_1_out), next_hop_node)
+            label_ic = pct_label(sort_by_initial_charge(n, nbh_1_out), next_hop_node)
+            label_rc = pct_label(sort_by_remaining_charge(n, nbh_1_out), next_hop_node)
 
-        sample={
-            'frame_type':frame['frame_type'],
-            'frame_size':frame['frame_size'],
-            # 'local_remaining_energy': n.get_node_by_id(SOURCE).remaining_energy,
-            # 'local_remaining_energy': n.get_node_by_id(SOURCE).remaining_energy,
-            # 'local_remaining_energy': n.get_node_by_id(SOURCE).remaining_energy,
-            'sum_1hop_remaining_energy':agg_1_re_out,
-            'sum_1hop_initial_charge':agg_1_ic_out,
-            'sum_1hop_remaining_charge':agg_1_rc_out,
-            'size_1hop':num_1,
-            'sum_2hop_remaining_energy':agg_2_re_out,
-            'sum_2hop_initial_charge':agg_2_ic_out,
-            'sum_2hop_remaining_charge':agg_2_rc_out,
-            'size_2hop':num_2,
-            'sum_3hop_remaining_energy':agg_3_re_out,
-            'sum_3hop_initial_charge':agg_3_ic_out,
-            'sum_3hop_remaining_charge':agg_3_rc_out,
-            'size_3hop':num_3,
-            'label_remaining_energy':label_re,
-            'label_initial_charge':label_ic,
-            'label_remaining_charge':label_rc
-        }
+            sample={
+                'frame_type':frame['frame_type'],
+                'frame_size':frame['frame_size'],
+                # 'local_remaining_energy': n.get_node_by_id(SOURCE).remaining_energy,
+                'sum_1hop_remaining_energy':agg_1_re_out,
+                'sum_1hop_initial_charge':agg_1_ic_out,
+                'sum_1hop_remaining_charge':agg_1_rc_out,
+                'size_1hop':num_1,
+                'sum_2hop_remaining_energy':agg_2_re_out,
+                'sum_2hop_initial_charge':agg_2_ic_out,
+                'sum_2hop_remaining_charge':agg_2_rc_out,
+                'size_2hop':num_2,
+                'sum_3hop_remaining_energy':agg_3_re_out,
+                'sum_3hop_initial_charge':agg_3_ic_out,
+                'sum_3hop_remaining_charge':agg_3_rc_out,
+                'size_3hop':num_3,
+                'label_remaining_energy':label_re,
+                'label_initial_charge':label_ic,
+                'label_remaining_charge':label_rc
+            }
 
-        samples = samples.append(sample, ignore_index=True)
+            samples = samples.append(sample, ignore_index=True)
 
         # update network state for next round
         n.update_state(frame)
-        n.remove_dead_nodes(dead_node_removed, exception=set([SOURCE, DESTINATION]))
+        # stop simulation if a node dies: time of first death
+
+        if DEAD_NODE_FLAG == True:
+            break
 
         # i = step in trace file = frame index... not really used for now
-        i+=1
 samples.to_csv('___.csv', index=False)
-
-
-# # save to dataset to metric.__name__+".json"
-# with open(metric.__name__+".json", 'w') as f:
-#     json.dump(state, f)
