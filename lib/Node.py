@@ -21,8 +21,10 @@ class Node():
         self.current_charge = initial_charge
         self.up = up_current
         self.down = down_current
-        # defines which value of current will be drained
+
+        # dictates which value of current will be drained
         self.is_current_up = False
+        
         self._update_cb=update_callback
 
     @property

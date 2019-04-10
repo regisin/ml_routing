@@ -52,6 +52,7 @@ THRESHOLD=0.05
 DEAD_NODE_FLAG=False
 def is_node_dead(node):
     if node.energy_fraction <= THRESHOLD:
+        print('[INFO] Dead node detected:', node.id)
         global DEAD_NODE_FLAG
         DEAD_NODE_FLAG = True
 
@@ -106,6 +107,14 @@ with open(trace_file) as f:
         for node in n.nodes:
             node.is_current_up=True if node.id in path else False
         
+
+#
+#
+# TO-DO:    -incorporate multiple flows concept somehow
+#           -add local state info to sample
+#
+#
+
         next_hop_index = 1
         for node_id in path[0:-1]:
             node = n.get_node(node_id)
@@ -164,10 +173,9 @@ with open(trace_file) as f:
 
         # update network state for next round
         n.update(frame)
-        # stop simulation if a node dies: time of first death
 
+        # stop simulation if a node dies: time of first death
         if DEAD_NODE_FLAG == True:
             break
 
-        # i = step in trace file = frame index... not really used for now
 samples.to_csv('___.csv', index=False)
