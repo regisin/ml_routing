@@ -3,6 +3,7 @@ __pycache__/
 *$py.class
 
 .vscode/
+.ipynb_checkpoints/
 
 *.json
 *.csv
