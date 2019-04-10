@@ -4,11 +4,13 @@ from lib.Node import Node
 from lib.Link import Link
 from lib.Network import Network
 
-from lib.utils import distance
+from lib.utils import parse_trace_line, distance,\
+    agg_energy_fraction, agg_initial_charge, agg_current_charge, agg_degree,\
+    sort_by_initial_charge
 
-class TestNodeAndLink(unittest.TestCase):
+class TestClasses(unittest.TestCase):
     """
-    Tests Node and Link related functions.
+    Tests classes Node, Link, and Network related functions.
     """
     def setUp(self):
         """
@@ -18,6 +20,11 @@ class TestNodeAndLink(unittest.TestCase):
         self.node1 = Node(node_id=1, position=(.0,.0,100.0), initial_charge=100.0, up_current=1.0, down_current=0.5, update_callback=None)
         self.link0 = Link(lambda x:1.0, self.node0, self.node1, error_probability=0.1, datarate=1.0)
         self.link1 = Link(lambda x:0.5, self.node1, self.node0, error_probability=0.1, datarate=2.0)
+        self.n0 = Network()
+        self.n0.add_node(self.node0)
+        self.n0.add_node(self.node1)
+        self.n0.add_link(self.link0)
+        self.n0.add_link(self.link1)
 
     def test_distance(self):
         """
@@ -30,29 +37,96 @@ class TestNodeAndLink(unittest.TestCase):
         self.assertEqual(d0, d1)
 
     def test_update(self):
+        """
+        Test update procedure of a Link object
+        """
         packet={
             'index': 0,
             'size': 1000,
             'type': 'I',
             'time': 0
         }
-
-        print('node')
-        self.node1.current_up = True
+        self.node1.is_current_up = True
         self.link0.update(packet)
-        self.assertEqual(self.node0.remaining_charge, 99.996)
-        self.assertEqual(self.node1.remaining_charge, 99.992)
+        self.assertEqual(self.node0.current_charge, 99.996)
+        self.assertEqual(self.node1.current_charge, 99.992)
 
-        self.node0.current_up = True
-        self.node1.current_up = False
+        self.node0.is_current_up = True
+        self.node1.is_current_up = False
         self.link1.update(packet)
-        self.assertAlmostEqual(self.node0.remaining_charge, 99.99199999999999)
-        self.assertAlmostEqual(self.node1.remaining_charge, 99.99)
+        self.assertAlmostEqual(self.node0.current_charge, 99.99199999999999)
+        self.assertAlmostEqual(self.node1.current_charge, 99.99000000000001)
+
+        self.node0.is_current_up = False
+        self.node1.is_current_up = True
+        self.n0.update(packet)
+        self.assertAlmostEqual(self.node0.current_charge, 99.98599999999999)
+        self.assertAlmostEqual(self.node1.current_charge, 99.97800000000001)
 
         self.assertEqual(self.link0.distance, 100.0)
         self.assertEqual(self.link1.distance, 100.0)
 
 
+class TestUtils(unittest.TestCase):
+    """
+    Test utility functions
+    """
+    def setUp(self):
+        """
+        Create sample networks
+        """
+        self.n0 = Network()
+        self.node0=Node(node_id=0, initial_charge=1.0)
+        self.node1=Node(node_id=1, initial_charge=2.0)
+        self.node2=Node(node_id=2, initial_charge=3.0)
+
+        self.node3=Node(node_id=3, initial_charge=3.0)
+
+        self.link0 = Link(lambda x:1.0, self.node0, self.node1, error_probability=0.1, datarate=1.0)
+
+        self.n0.add_node(self.node0)
+        self.n0.add_node(self.node1)
+        self.n0.add_node(self.node2)
+        self.n0.add_node(self.node3)
+
+        self.n0.add_link(self.link0)
+
+        self.packet={
+            'index': 13,
+            'size': 1000,
+            'type': 'B',
+            'time': 440
+        }
+
+    def test_parse(self):
+        """
+        Test line parser function
+        """
+        line = "13		B		440		1000"
+        self.assertEqual(self.packet, parse_trace_line(line))
+    
+    def test_agg_functions(self):
+        """
+        Test aggregation functions: agg_energy_fraction, agg_initial_charge, agg_current_charge, agg_out_degree, agg_in_degree.
+        """
+        self.node0.is_current_up = True
+        self.node0.update(self.packet, self.link0)
+
+        ef = agg_energy_fraction(self.n0, [0,1,2])
+        self.assertLess(ef, 3.0)
+        ic = agg_initial_charge(self.n0, [0,1,2])
+        self.assertEqual(ic, 6.0)
+        ic = agg_initial_charge(self.n0, [0,1,2,3])
+        self.assertEqual(ic, 9.0)
+        cc = agg_current_charge(self.n0, [0,1,2])
+        self.assertLess(cc, 6.0)
+        cc = agg_current_charge(self.n0, [0,1,2,3])
+        self.assertGreater(cc, 6.0)
+
+        d = agg_degree(self.n0, [0,1,2,3])
+        self.assertEqual(d, 1)
+        d = agg_degree(self.n0, [0,1,2,3], out=False)
+        self.assertEqual(d, 1)
 
 
 
@@ -60,30 +134,16 @@ class TestNodeAndLink(unittest.TestCase):
 
 
 
-
-
-
-
-
-
-
-    # def test_sort_by_initial_charge(self):
-    #     n = Network()
-        
-    #     n0=Node(_id=0, initial_charge=1.0)
-    #     n1=Node(_id=1, initial_charge=2.0)
-    #     n2=Node(_id=2, initial_charge=3.0)
-        
-    #     n.add_node(node=n0)
-    #     n.add_node(node=n1)
-    #     n.add_node(node=n2)
-
-    #     self.assertEqual([n0, n1, n2], sort_by_initial_charge(n, set([0,1,2])))
-    #     self.assertNotEqual([n0, n2, n1], sort_by_initial_charge(n, set([0,1,2])))
-    #     self.assertNotEqual([n1, n0, n2], sort_by_initial_charge(n, set([0,1,2])))
-    #     self.assertNotEqual([n1, n2, n0], sort_by_initial_charge(n, set([0,1,2])))
-    #     self.assertNotEqual([n2, n0, n1], sort_by_initial_charge(n, set([0,1,2])))
-    #     self.assertNotEqual([n2, n1, n0], sort_by_initial_charge(n, set([0,1,2])))
+    # def test_sort_functions(self):
+    #     """
+    #     Test sorting functions
+    #     """
+    #     self.assertEqual([self.node0, self.node1, self.node2], sort_by_initial_charge(self.n0, set([0,1,2])))
+    #     self.assertNotEqual([self.node0, self.node2, self.node1], sort_by_initial_charge(self.n0, set([0,1,2])))
+    #     self.assertNotEqual([self.node1, self.node0, self.node2], sort_by_initial_charge(self.n0, set([0,1,2])))
+    #     self.assertNotEqual([self.node1, self.node2, self.node0], sort_by_initial_charge(self.n0, set([0,1,2])))
+    #     self.assertNotEqual([self.node2, self.node0, self.node1], sort_by_initial_charge(self.n0, set([0,1,2])))
+    #     self.assertNotEqual([self.node2, self.node1, self.node0], sort_by_initial_charge(self.n0, set([0,1,2])))
 
     # def test_directed_dijkstra(self):
     #     def metric(link):

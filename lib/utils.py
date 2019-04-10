@@ -10,7 +10,7 @@ def parse_trace_line(line):
         'index': int(frame_index),
         'size': int(frame_size),
         'type': frame_type,
-        'frame_time': int(frame_time),
+        'time': int(frame_time),
     }
 
 def distance(a,b):
@@ -23,9 +23,9 @@ def distance(a,b):
     """
     return ( (a[0]-b[0])**2 + (a[1]-b[1])**2 + (a[2]-b[2])**2 )**0.5
 
-def agg_remaining_energy(network, nodes):
+def agg_energy_fraction(network, nodes):
     """
-    Adds the remaining_energy attribute of each node in the set.
+    Adds the energy_fraction attribute of each node in the set.
 
     Input
     network: Network object.
@@ -33,8 +33,8 @@ def agg_remaining_energy(network, nodes):
     """
     re = 0
     for _id in nodes:
-        node = network.get_node_by_id(_id)
-        re += node.remaining_energy
+        node = network.get_node(_id)
+        re += node.energy_fraction
     return re
 
 def agg_initial_charge(network, nodes):
@@ -47,11 +47,11 @@ def agg_initial_charge(network, nodes):
     """
     ic = 0
     for _id in nodes:
-        node = network.get_node_by_id(_id)
+        node = network.get_node(_id)
         ic += node.initial_charge
     return ic
 
-def agg_remaining_charge(network, nodes):
+def agg_current_charge(network, nodes):
     """
     Adds the remaining_charge attribute of each node in the set.
 
@@ -61,11 +61,11 @@ def agg_remaining_charge(network, nodes):
     """
     rc = 0
     for _id in nodes:
-        node = network.get_node_by_id(_id)
-        rc += node.initial_charge * node.remaining_energy
+        node = network.get_node(_id)
+        rc += node.initial_charge * node.energy_fraction
     return rc
 
-def agg_out_degree(network, nodes):
+def agg_degree(network, nodes, out=True):
     """
     Adds the out_degree (number of outgoing edges) of each node in the set.
 
@@ -73,27 +73,14 @@ def agg_out_degree(network, nodes):
     network: Network object.
     nodes: set() of ints representing the node's id.
     """
-    od = 0
+    d = 0
     for _id in nodes:
-        od += network.get_node_out_degree(_id)
-    return od
+        d += degree(network, _id, out=out)
+    return d
 
-def agg_in_degree(network, nodes):
+def sort_by_energy_fraction(network, nodes):
     """
-    Adds the in_degree (number of outgoing edges) of each node in the set.
-
-    Input
-    network: Network object.
-    nodes: set() of ints representing the node's id.
-    """
-    ind = 0
-    for _id in nodes:
-        ind += network.get_node_in_degree(_id)
-    return ind
-
-def sort_by_remaining_energy(network, nodes):
-    """
-    Returns a sorted list based on the remaining_energy attribute of each node in the set.
+    Returns a sorted list based on the energy_fraction attribute of each node in the set.
 
     Input
     network: Network object.
@@ -102,7 +89,7 @@ def sort_by_remaining_energy(network, nodes):
     nodes = []
     for _id in nodes:
         nodes.append(network.get_node_by_id(_id))
-    return sorted(nodes, key=lambda x: x.remaining_energy)
+    return sorted(nodes, key=lambda x: x.energy_fraction)
 
 def sort_by_initial_charge(network, nodes):
     """
@@ -112,10 +99,10 @@ def sort_by_initial_charge(network, nodes):
     network: Network object.
     nodes: set() of ints representing the node's id.
     """
-    nodes = []
+    sorted_nodes = []
     for _id in nodes:
-        nodes.append(network.get_node_by_id(_id))
-    return sorted(nodes, key=lambda x: x.initial_charge)
+        sorted_nodes.append(network.get_node(_id))
+    return sorted(sorted_nodes, key=lambda x: x.initial_charge)
 
 def sort_by_remaining_charge(network, nodes):
     """
@@ -248,9 +235,9 @@ def links_from_node_id(network, node_id, out=True):
     for link in network.links:
         _id = None
         if out:
-            _id = link._from.id
+            _id = link.from_node.id
         else:
-            _id = link._to.id
+            _id = link.to_node.id
         if _id == node_id:
             links.append(link)
     return links

@@ -7,43 +7,63 @@ class Node():
         node_id: int.
         position: tuple of floats (x,y,z).
         initial_charge: float (in units of charge - Coulombs)
-        up_current: float (draining current in Amps when node UP state is True).
-        down_current: float (draining current in Amps when node UP state is False).
+        up: float (draining current in Amps when node UP state is True).
+        down: float (draining current in Amps when node UP state is False).
         update_callback: pointer to a function called after update_state.
         """
         self.id=node_id
+
         self.x=position[0]
         self.y=position[1]
         self.z=position[2]
-        self.initial_charge=initial_charge
-        self.remaining_charge = initial_charge
-        self.remaining_energy = 1.0
-        self.up_current = up_current
-        self.down_current = down_current
-        self.current_up = False
+
+        self.initial_charge = initial_charge
+        self.current_charge = initial_charge
+        self.energy_fraction = 1.0
+        self.up = up_current
+        self.down = down_current
+        # defines which value of current will be drained
+        self.is_current_up = False
         self._update_cb=update_callback
 
+    @property
+    def position(self):
+        """
+        Easy formatting for node's position
+        """
+        return (self.x, self.y, self.z)
 
     def update(self, packet, link):
         """
         Updates the state of charge (remaining energy fraction and remaining charge) based on size of packet.
         """
-        drain_current = self.down_current
-        if self.current_up:
-            drain_current = self.up_current
+
+        current = self.down
+        if self.is_current_up: current = self.up
+
+        # current state of charge
+        current_charge = self.current_charge
+
+        # calculate delta time based on packet size and datarate
         datarate = link.datarate
-        current_charge = self.initial_charge * self.remaining_energy
         packet_size = packet['size']
         t = (packet_size * 8) / (datarate * 1000000) # seconds
-        deplete_charge = (t * drain_current)
-        self.remaining_charge = current_charge - deplete_charge
 
+        # amount of coulombs consumed
+        amount_to_decrease = (t * current)
+
+        # update state of charge
+        self.current_charge = current_charge - amount_to_decrease
+
+        # percent differente to decrease
         perc=0.0
-        if self.initial_charge > 0.0:
-            perc = (current_charge - deplete_charge) / self.initial_charge
-        self.remaining_energy -= perc
+        if self.current_charge > 0.0:
+            perc = amount_to_decrease / self.initial_charge
+        self.energy_fraction -= perc
 
-        if self.initial_charge <= 0.0:
-            self.initial_charge = 0.0
-        if self._update_cb:
-            self._update_cb(self)
+        # prevent charge to go negative.
+        if self.current_charge <= 0.0: self.current_charge = 0.0
+
+        # update position
+        # notify callback function
+        if self._update_cb: self._update_cb(self)

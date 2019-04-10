@@ -41,7 +41,7 @@ class Network():
                 graph[node.id][link._to.id]=link.metric
         return graph
 
-    def add_node(self, node=None):
+    def add_node(self, node):
         """
         Adds a Node object to the node set. Does not check for duplicate ids, uses set() instead.
         """
@@ -62,7 +62,7 @@ class Network():
                 return node
         return None
 
-    def add_link(self, link=None):
+    def add_link(self, link):
         """
         Adds a link to the list. Does not check for duplicates (in the future this will allow multiple links from same pair of nodes).
         """
