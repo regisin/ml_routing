@@ -1,3 +1,4 @@
+from lib.utils import links_from_node_id
 class Network():
     def __init__(self):
         """
@@ -37,8 +38,8 @@ class Network():
         graph = {}
         for node in self.nodes:
             graph[node.id]={}
-            for link in self.get_all_out_links_from_node_id(node.id):
-                graph[node.id][link._to.id]=link.metric
+            for link in links_from_node_id(self, node.id):
+                graph[node.id][link.to_node.id] = link.metric
         return graph
 
     def add_node(self, node):

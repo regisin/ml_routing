@@ -1,3 +1,6 @@
+from pqdict import minpq
+from collections import deque
+
 def parse_trace_line(line):
     """
     Maps a line from a trace file into a dictionary for ease of use.
@@ -80,20 +83,20 @@ def agg_degree(network, nodes, out=True):
 
 def sort_by_energy_fraction(network, nodes):
     """
-    Returns a sorted list based on the energy_fraction attribute of each node in the set.
+    Returns a sorted (ascending) list based on the energy_fraction attribute of each node in the set.
 
     Input
     network: Network object.
     nodes: set() of ints representing the node's id.
     """
-    nodes = []
+    sorted_nodes = []
     for _id in nodes:
-        nodes.append(network.get_node_by_id(_id))
-    return sorted(nodes, key=lambda x: x.energy_fraction)
+        sorted_nodes.append(network.get_node(_id))
+    return sorted(sorted_nodes, key=lambda x: x.energy_fraction)
 
 def sort_by_initial_charge(network, nodes):
     """
-    Returns a sorted list based on the initial_charge attribute of each node in the set.
+    Returns a sorted (ascending) list based on the initial_charge attribute of each node in the set.
 
     Input
     network: Network object.
@@ -104,18 +107,18 @@ def sort_by_initial_charge(network, nodes):
         sorted_nodes.append(network.get_node(_id))
     return sorted(sorted_nodes, key=lambda x: x.initial_charge)
 
-def sort_by_remaining_charge(network, nodes):
+def sort_by_current_charge(network, nodes):
     """
-    Returns a sorted list based on the remaining_charge attribute of each node in the set.
+    Returns a sorted (descending) list based on the current_charge attribute of each node in the set.
 
     Input
     network: Network object.
     nodes: set() of ints representing the node's id.
     """
-    nodes = []
+    sorted_nodes = []
     for _id in nodes:
-        nodes.append(network.get_node_by_id(_id))
-    return sorted(nodes, key=lambda x: x.remaining_charge)
+        sorted_nodes.append(network.get_node(_id))
+    return sorted(sorted_nodes, key=lambda x: 1./(1.+x.current_charge))
 
 def ordinal_label(sorted_list, item):
     """
@@ -132,7 +135,7 @@ def ordinal_label(sorted_list, item):
 
 def dijkstra(graph, source, destination=None):
     """
-    Runs Dijkstra's algorithm on a given graph.
+    Runs Dijkstra's algorithm on a given graph. Stops earlier if destination != None.
 
     Input
     graph: dict of dicts (directed graph)
@@ -183,10 +186,14 @@ def shortest_path(graph, source, destination):
     end = destination
     path = [end]
     while end != source:
-        end = pred[end]
+        try:
+            end = pred[end]
+        except KeyError:
+            # no route found
+            return float('inf'), []
         path.append(end)        
     path.reverse()
-    return path
+    return dist[destination], path
 
 def neighborhood(network, from_id, hops=1, out=True):
     """
@@ -198,8 +205,8 @@ def neighborhood(network, from_id, hops=1, out=True):
     hops: int (distance from the source in hops).
     out: if False will use incoming links to the source instead of outgoing from the source. Default True.
     """
-    visited = set()
-    queue = deque([_from, None])
+    visited = set([from_id])
+    queue = deque([from_id, None])
 
     level = 0
     nbh=set([])
@@ -215,7 +222,8 @@ def neighborhood(network, from_id, hops=1, out=True):
                 continue
         links = links_from_node_id(network, vertex, out=out)
         for link in links:
-            nb = link._to.id
+            nb = link.to_node.id
+            if not out: nb = link.from_node.id
             if nb not in visited:
                 visited.add(nb)
                 queue.append(nb)

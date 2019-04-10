@@ -19,7 +19,6 @@ class Node():
 
         self.initial_charge = initial_charge
         self.current_charge = initial_charge
-        self.energy_fraction = 1.0
         self.up = up_current
         self.down = down_current
         # defines which value of current will be drained
@@ -32,6 +31,10 @@ class Node():
         Easy formatting for node's position
         """
         return (self.x, self.y, self.z)
+
+    @property
+    def energy_fraction(self):
+        return self.current_charge/self.initial_charge
 
     def update(self, packet, link):
         """
@@ -54,12 +57,6 @@ class Node():
 
         # update state of charge
         self.current_charge = current_charge - amount_to_decrease
-
-        # percent differente to decrease
-        perc=0.0
-        if self.current_charge > 0.0:
-            perc = amount_to_decrease / self.initial_charge
-        self.energy_fraction -= perc
 
         # prevent charge to go negative.
         if self.current_charge <= 0.0: self.current_charge = 0.0
