@@ -80,7 +80,7 @@ metric = metric_destination_energy
 #
 for i in range(square_size):
     for j in range(square_size):
-        n.add_node(Node(node_id=int(str(i) + str(j)), position=(i*100.0, j*100.0, 0.0), initial_charge=100.0, up_current=1.5, down_current=0.5, update_callback=is_node_dead))
+        n.add_node(Node(node_id=int(str(i) + str(j)), position=(i*100.0, j*100.0, 0.0), initial_charge=100.0, up=1.5, down=0.5, update_callback=is_node_dead))
 for i in range(square_size):
     for j in range(square_size):
         node = n.get_node(int(str(i) + str(j)))

@@ -18,8 +18,8 @@ class TestClasses(unittest.TestCase):
         """
         Initialize test objects.
         """
-        self.node0 = Node(node_id=0, position=(.0,.0,.0), initial_charge=100.0, up_current=1.0, down_current=0.5, update_callback=None)
-        self.node1 = Node(node_id=1, position=(.0,.0,100.0), initial_charge=100.0, up_current=1.0, down_current=0.5, update_callback=None)
+        self.node0 = Node(node_id=0, position=(.0,.0,.0), initial_charge=100.0, up=1.0, down=0.5, update_callback=None)
+        self.node1 = Node(node_id=1, position=(.0,.0,100.0), initial_charge=100.0, up=1.0, down=0.5, update_callback=None)
         self.link0 = Link(lambda x:1.0, self.node0, self.node1, error_probability=0.1, datarate=1.0)
         self.link1 = Link(lambda x:0.5, self.node1, self.node0, error_probability=0.1, datarate=2.0)
         self.n0 = Network()
@@ -203,7 +203,7 @@ class TestUtils(unittest.TestCase):
         n = Network()
         for i in range(7):
             for j in range(7):
-                n.add_node(Node(node_id=int(str(i) + str(j)), position=(i*100.0, j*100.0, 0.0), initial_charge=100.0, up_current=1.5, down_current=0.5))
+                n.add_node(Node(node_id=int(str(i) + str(j)), position=(i*100.0, j*100.0, 0.0), initial_charge=100.0, up=1.5, down=0.5))
         for i in range(7):
             for j in range(7):
                 node = n.get_node(int(str(i) + str(j)))

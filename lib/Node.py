@@ -35,8 +35,8 @@ class Node():
 
         self.initial_charge = initial_charge
         self.current_charge = initial_charge
-        self.up = up_current
-        self.down = down_current
+        self.up = up
+        self.down = down
 
         # dictates which value of current will be drained
         self.is_current_up = is_current_up
