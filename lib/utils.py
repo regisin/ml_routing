@@ -258,3 +258,10 @@ def degree(network, node_id, out=True):
         out (bool): If False will use incoming links to the source instead of outgoing. Default True.
     """
     return len(links_from_node_id(network, node_id, out=out))
+
+def reset_flow_counter(network):
+    """
+    Resets the flow counter (number of flows going through the node) of each node to 0.
+    """
+    for node in network.nodes:
+        node.flow_counter = 0

@@ -24,6 +24,7 @@ class Node():
             initial_charge (float): The initial state of charge of the battery, in Coulombs.
             up (float): The draining current in Amps when `is_current_up` is True.
             down (float): The draining current in Amps when `is_current_up` is False.
+            flow_counter (int): The number of flows going through this node.
             is_node_up (bool): The state of the node, i.e. active (True) or inactive (False).
             update_callback (pointer): Callback function called after `update` finished. Ex.: `self.update_callback(self)`.
         """
@@ -37,6 +38,8 @@ class Node():
         self.current_charge = initial_charge
         self.up = up
         self.down = down
+
+        self.flow_counter = 0
 
         # dictates which value of current will be drained
         self.is_current_up = is_current_up

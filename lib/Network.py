@@ -1,4 +1,4 @@
-from lib.utils import links_from_node_id
+from lib.utils import links_from_node_id, reset_flow_counter
 class Network():
     """
     Container class that represents the network.
@@ -118,6 +118,16 @@ class Network():
                 return link
         return None
 
+    def update_with_packets(self, packets):
+        """
+        Updates the state of the network by updating each individual link for each packet in the list. Useful for multi-flow scenarios.
+
+        Parameters:
+            packets (list): List of packets from calls to `parse_trace_line(line)`.
+        """
+        for p in packets:
+            self.update(p)
+
     def update(self, packet):
         """
         Updates the state of the network by updating each individual link.
@@ -127,3 +137,4 @@ class Network():
         """
         for link in self.links:
             link.update(packet)
+        reset_flow_counter(self)

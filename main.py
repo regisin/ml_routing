@@ -3,6 +3,7 @@ import numpy as np
 
 from lib.Node import Node
 from lib.Link import Link
+from lib.Flow import TraceFlow
 from lib.Network import Network
 from lib.utils import *
 
@@ -13,7 +14,7 @@ Why? 7+7+5+5 = 24 edge nodes (x); 5x5=25 inner nodes (o)
 z = 0 for all
 
 (x,y)
-(0,600) ----> (600,600)
+(0,600) ------> (600,600)
 x---x---x---x---x---x---x
 |   |   |   |   |   |   |
 x---o---o---o---o---o---x
@@ -27,7 +28,7 @@ x---o---o---o---o---o---x
 x---o---o---o---o---o---x
 |   |   |   |   |   |   |
 x---x---x---x---x---x---x
-(0,0) ----> (600,0)
+(0,0)   ------>   (600,0)
 
 84x2=168 links
 """
@@ -93,89 +94,106 @@ for i in range(square_size):
         if j+1 < square_size:
             n.add_link(Link(metric, from_node=node, to_node=n.get_node(int(str(i) + str(j+1)))))
 
+def generate_sample(network, frame, node_id, next_hop_node_id):
+    node = network.get_node(node_id)
+    ####### need to add to sample
+    local_initial_charge = node.initial_charge
+    local_energy_fraction = node.energy_fraction
+    #######
+    nbh_1_out = neighborhood(network, node_id, hops=1)
+    nbh_2_out = neighborhood(network, node_id, hops=2)
+    nbh_3_out = neighborhood(network, node_id, hops=3)
+
+    num_1 = len(nbh_1_out)
+    num_2 = len(nbh_2_out)
+    num_3 = len(nbh_3_out)
+
+    agg_1_re_out = agg_energy_fraction(network, nbh_1_out)
+    agg_2_re_out = agg_energy_fraction(network, nbh_2_out)
+    agg_3_re_out = agg_energy_fraction(network, nbh_3_out)
+
+    agg_1_ic_out = agg_initial_charge(network, nbh_1_out)
+    agg_2_ic_out = agg_initial_charge(network, nbh_2_out)
+    agg_3_ic_out = agg_initial_charge(network, nbh_3_out)
+
+    agg_1_cc_out = agg_current_charge(network, nbh_1_out)
+    agg_2_cc_out = agg_current_charge(network, nbh_2_out)
+    agg_3_cc_out = agg_current_charge(network, nbh_3_out)
+
+    next_hop_node = n.get_node(next_hop_node_id)
+
+    label_re = ordinal_label(sort_by_energy_fraction(n, nbh_1_out), next_hop_node)
+    label_ic = ordinal_label(sort_by_initial_charge(n, nbh_1_out), next_hop_node)
+    label_cc = ordinal_label(sort_by_current_charge(n, nbh_1_out), next_hop_node)
+
+
+# TO-DO
+# Add flow counter info for nbh and next hop node.
+#
+
+    return {
+        'frame_type':frame['type'],
+        'frame_size':frame['size'],
+        'sum_1hop_energy_fraction':agg_1_re_out,
+        'sum_1hop_initial_charge':agg_1_ic_out,
+        'sum_1hop_current_charge':agg_1_cc_out,
+        'size_1hop':num_1,
+        'sum_2hop_energy_fraction':agg_2_re_out,
+        'sum_2hop_initial_charge':agg_2_ic_out,
+        'sum_2hop_current_charge':agg_2_cc_out,
+        'size_2hop':num_2,
+        'sum_3hop_energy_fraction':agg_3_re_out,
+        'sum_3hop_initial_charge':agg_3_ic_out,
+        'sum_3hop_current_charge':agg_3_cc_out,
+        'size_3hop':num_3,
+        'label_energy_fraction':label_re,
+        'label_initial_charge':label_ic,
+        'label_current_charge':label_cc
+    }
+
+def any_packet_left_in_any_flow(flows):
+    for flow in flows:
+        if flow.has_packets_left: return True
+    return False
+
+# Create flows
+flows = []
+flows.append(TraceFlow(n.get_node(0), n.get_node(66), trace_file))
+flows.append(TraceFlow(n.get_node(6), n.get_node(60), trace_file))
+
+# Consume flows
 samples = pd.DataFrame()
-with open(trace_file) as f:
-    for line in f:
-        frame = parse_trace_line(line)
-        # if frame['frame_index'] % 3 == 0: break
+while any_packet_left_in_any_flow(flows):
+    packets = []
+    for flow in flows:
 
-        # "transmit the frame"
-        # - calculate shortest path
-        cost, path = shortest_path(n.graph, SOURCE, DESTINATION)
-        # print('Path:',path,' = Cost: ', cost)
-        # - save network state (topology, node state, link state, frame)
+        if flow.has_packets_left == None: continue
+        packets.append(flow.current_packet)
+
+        cost, path = shortest_path(n.graph, flow.from_node.id, flow.to_node.id)
+
         for node in n.nodes:
-            node.is_current_up=True if node.id in path else False
+            if node.id in path:
+                node.is_current_up = True
+                node.flow_counter += 1
+            else:
+                node.is_current_up = False
         
-
-#
-#
-# TO-DO:    -incorporate multiple flows concept somehow
-#           -add local state info to sample
-#
-#
-
         next_hop_index = 1
         for node_id in path[0:-1]:
-            node = n.get_node(node_id)
-####### need to add to sample
-            local_initial_charge = node.initial_charge
-            local_energy_fraction = node.energy_fraction
-#######
-            nbh_1_out = neighborhood(n, node_id, hops=1)
-            nbh_2_out = neighborhood(n, node_id, hops=2)
-            nbh_3_out = neighborhood(n, node_id, hops=3)
-
-            num_1 = len(nbh_1_out)
-            num_2 = len(nbh_2_out)
-            num_3 = len(nbh_3_out)
-
-            agg_1_re_out = agg_energy_fraction(n, nbh_1_out)
-            agg_2_re_out = agg_energy_fraction(n, nbh_2_out)
-            agg_3_re_out = agg_energy_fraction(n, nbh_3_out)
-
-            agg_1_ic_out = agg_initial_charge(n, nbh_1_out)
-            agg_2_ic_out = agg_initial_charge(n, nbh_2_out)
-            agg_3_ic_out = agg_initial_charge(n, nbh_3_out)
-
-            agg_1_cc_out = agg_current_charge(n, nbh_1_out)
-            agg_2_cc_out = agg_current_charge(n, nbh_2_out)
-            agg_3_cc_out = agg_current_charge(n, nbh_3_out)
-            
-            next_hop_node = n.get_node(path[next_hop_index])
+            sample = generate_sample(n, flow.current_packet, node_id, path[next_hop_index])
             next_hop_index += 1
-
-            label_re = ordinal_label(sort_by_energy_fraction(n, nbh_1_out), next_hop_node)
-            label_ic = ordinal_label(sort_by_initial_charge(n, nbh_1_out), next_hop_node)
-            label_cc = ordinal_label(sort_by_current_charge(n, nbh_1_out), next_hop_node)
-
-            sample={
-                'frame_type':frame['type'],
-                'frame_size':frame['size'],
-                'sum_1hop_energy_fraction':agg_1_re_out,
-                'sum_1hop_initial_charge':agg_1_ic_out,
-                'sum_1hop_current_charge':agg_1_cc_out,
-                'size_1hop':num_1,
-                'sum_2hop_energy_fraction':agg_2_re_out,
-                'sum_2hop_initial_charge':agg_2_ic_out,
-                'sum_2hop_current_charge':agg_2_cc_out,
-                'size_2hop':num_2,
-                'sum_3hop_energy_fraction':agg_3_re_out,
-                'sum_3hop_initial_charge':agg_3_ic_out,
-                'sum_3hop_current_charge':agg_3_cc_out,
-                'size_3hop':num_3,
-                'label_energy_fraction':label_re,
-                'label_initial_charge':label_ic,
-                'label_current_charge':label_cc
-            }
-
             samples = samples.append(sample, ignore_index=True)
 
-        # update network state for next round
-        n.update(frame)
+            
+    n.update_with_packets(packets)
 
-        # stop simulation if a node dies: time of first death
-        if DEAD_NODE_FLAG == True:
-            break
+
+    # go to next packet
+    for f in flows: f.next()
+
+    # stop simulation if a node dies: time of first death
+    if DEAD_NODE_FLAG == True:
+        break
 
 samples.to_csv('___.csv', index=False)
