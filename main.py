@@ -120,12 +120,16 @@ def generate_sample(network, frame, node_id, next_hop_node_id):
     agg_2_cc_out = agg_current_charge(network, nbh_2_out)
     agg_3_cc_out = agg_current_charge(network, nbh_3_out)
 
+    agg_1_fc_out = agg_flow_count(network, nbh_1_out)
+    agg_2_fc_out = agg_flow_count(network, nbh_2_out)
+    agg_3_fc_out = agg_flow_count(network, nbh_3_out)
+
     next_hop_node = n.get_node(next_hop_node_id)
 
     label_re = ordinal_label(sort_by_energy_fraction(n, nbh_1_out), next_hop_node)
     label_ic = ordinal_label(sort_by_initial_charge(n, nbh_1_out), next_hop_node)
     label_cc = ordinal_label(sort_by_current_charge(n, nbh_1_out), next_hop_node)
-
+    label_fc = ordinal_label(sort_by_flow_count(n, nbh_1_out), next_hop_node)
 
 # TO-DO
 # Add flow counter info for nbh and next hop node.
@@ -137,18 +141,22 @@ def generate_sample(network, frame, node_id, next_hop_node_id):
         'sum_1hop_energy_fraction':agg_1_re_out,
         'sum_1hop_initial_charge':agg_1_ic_out,
         'sum_1hop_current_charge':agg_1_cc_out,
+        'sum_1hop_flow_counter':agg_1_fc_out,
         'size_1hop':num_1,
         'sum_2hop_energy_fraction':agg_2_re_out,
         'sum_2hop_initial_charge':agg_2_ic_out,
         'sum_2hop_current_charge':agg_2_cc_out,
+        'sum_1hop_flow_counter':agg_2_fc_out,
         'size_2hop':num_2,
         'sum_3hop_energy_fraction':agg_3_re_out,
         'sum_3hop_initial_charge':agg_3_ic_out,
         'sum_3hop_current_charge':agg_3_cc_out,
+        'sum_1hop_flow_counter':agg_3_fc_out,
         'size_3hop':num_3,
         'label_energy_fraction':label_re,
         'label_initial_charge':label_ic,
-        'label_current_charge':label_cc
+        'label_current_charge':label_cc,
+        'label_flow_count':label_fc,
     }
 
 def any_packet_left_in_any_flow(flows):

@@ -81,6 +81,20 @@ def agg_degree(network, nodes, out=True):
         d += degree(network, _id, out=out)
     return d
 
+def agg_flow_count(network, nodes, out=True):
+    """
+    Adds the flow_counter attribute (number of flows going throigh) of each node in the set.
+
+    Parameters:
+        network (Network): The reference network to perform the operation on.
+        nodes (set([int,...])): Set of node ids.
+    """
+    fc = 0
+    for _id in nodes:
+        node = network.get_node(_id)
+        fc += node.flow_counter
+    return fc
+
 def sort_by_energy_fraction(network, nodes):
     """
     Returns a sorted (ascending) list based on the energy_fraction attribute of each node in the set.
@@ -119,6 +133,19 @@ def sort_by_current_charge(network, nodes):
     for _id in nodes:
         sorted_nodes.append(network.get_node(_id))
     return sorted(sorted_nodes, key=lambda x: 1./(1.+x.current_charge))
+
+def sort_by_flow_count(network, nodes):
+    """
+    Returns a sorted (ascending) list based on the flow_counter attribute of each node in the set.
+
+    Parameters:
+        network (Network): The reference network to perform the operation on.
+        nodes (set([int,...])): Set of node ids.
+    """
+    sorted_nodes = []
+    for _id in nodes:
+        sorted_nodes.append(network.get_node(_id))
+    return sorted(sorted_nodes, key=lambda x: x.flow_counter)
 
 def ordinal_label(sorted_list, item):
     """
