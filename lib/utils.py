@@ -5,8 +5,8 @@ def parse_trace_line(line):
     """
     Maps a line from a trace file into a dictionary for ease of use.
     
-    Input
-    line: str.
+    Parameters:
+        line (str): A line from a trace file to be parsed.
     """
     frame_index, frame_type, frame_time, frame_size = [x for x in line.rstrip("\n\r").split('\t') if x]
     return {
@@ -18,11 +18,11 @@ def parse_trace_line(line):
 
 def distance(a,b):
     """
-    Calculates the Euclidean distance between points 'a' and 'b'.
+    Calculates the Euclidean distance between two points 'a' and 'b'.
     
-    Input
-    a: tuple of floats (x,y,z).
-    b: tuple of floats (x,y,z).
+    Parameters:
+        a (float, float, float): Cartesian coordinates in the form of (x,y,z).
+        b (float, float, float): Cartesian coordinates in the form of (x,y,z).
     """
     return ( (a[0]-b[0])**2 + (a[1]-b[1])**2 + (a[2]-b[2])**2 )**0.5
 
@@ -30,9 +30,9 @@ def agg_energy_fraction(network, nodes):
     """
     Adds the energy_fraction attribute of each node in the set.
 
-    Input
-    network: Network object.
-    nodes: set() of ints representing the node's id.
+    Parameters:
+        network (Network): The reference network to perform the operation on.
+        nodes (set([int,...])): Set of node ids.
     """
     re = 0
     for _id in nodes:
@@ -44,9 +44,9 @@ def agg_initial_charge(network, nodes):
     """
     Adds the initial_charge attribute of each node in the set.
 
-    Input
-    network: Network object.
-    nodes: set() of ints representing the node's id.
+    Parameters:
+        network (Network): The reference network to perform the operation on.
+        nodes (set([int,...])): Set of node ids.
     """
     ic = 0
     for _id in nodes:
@@ -58,9 +58,9 @@ def agg_current_charge(network, nodes):
     """
     Adds the remaining_charge attribute of each node in the set.
 
-    Input
-    network: Network object.
-    nodes: set() of ints representing the node's id.
+    Parameters:
+        network (Network): The reference network to perform the operation on.
+        nodes (set([int,...])): Set of node ids.
     """
     rc = 0
     for _id in nodes:
@@ -72,9 +72,9 @@ def agg_degree(network, nodes, out=True):
     """
     Adds the out_degree (number of outgoing edges) of each node in the set.
 
-    Input
-    network: Network object.
-    nodes: set() of ints representing the node's id.
+    Parameters:
+        network (Network): The reference network to perform the operation on.
+        nodes (set([int,...])): Set of node ids.
     """
     d = 0
     for _id in nodes:
@@ -85,9 +85,9 @@ def sort_by_energy_fraction(network, nodes):
     """
     Returns a sorted (ascending) list based on the energy_fraction attribute of each node in the set.
 
-    Input
-    network: Network object.
-    nodes: set() of ints representing the node's id.
+    Parameters:
+        network (Network): The reference network to perform the operation on.
+        nodes (set([int,...])): Set of node ids.
     """
     sorted_nodes = []
     for _id in nodes:
@@ -98,9 +98,9 @@ def sort_by_initial_charge(network, nodes):
     """
     Returns a sorted (ascending) list based on the initial_charge attribute of each node in the set.
 
-    Input
-    network: Network object.
-    nodes: set() of ints representing the node's id.
+    Parameters:
+        network (Network): The reference network to perform the operation on.
+        nodes (set([int,...])): Set of node ids.
     """
     sorted_nodes = []
     for _id in nodes:
@@ -111,9 +111,9 @@ def sort_by_current_charge(network, nodes):
     """
     Returns a sorted (descending) list based on the current_charge attribute of each node in the set.
 
-    Input
-    network: Network object.
-    nodes: set() of ints representing the node's id.
+    Parameters:
+        network (Network): The reference network to perform the operation on.
+        nodes (set([int,...])): Set of node ids.
     """
     sorted_nodes = []
     for _id in nodes:
@@ -124,9 +124,9 @@ def ordinal_label(sorted_list, item):
     """
     Computes the ordinal feature based on sorted list and index.
 
-    Input
-    sorted_list: list (agnostic of type of sorting performed)
-    item: an item in the sorted_list (i.e. from which we extract the ordinal feature)
+    Parameters:
+        sorted_list (list): Previously sorte list of node ids.
+        item (int): An item in the sorted_list (i.e. from which we extract the ordinal feature).
     """
     total = len(sorted_list)
     index = sorted_list.index(item)
@@ -137,18 +137,10 @@ def dijkstra(graph, source, destination=None):
     """
     Runs Dijkstra's algorithm on a given graph. Stops earlier if destination != None.
 
-    Input
-    graph: dict of dicts (directed graph)
-    source: int (the source node id)
-    destination: int (the destination node id)
-
-    Ex.:
-
-    graph = {
-        0: {1:10, 2:1},
-        1: {},
-        2: {1:1}
-    }
+    Parameters:
+        graph (dict): The network represented as a graph dictionary (ex.: the `Network.graph` attribute).
+        source (int): The unique id of a node in the network.
+        destination (int): The unique id of a node in the network.
     """
     dist = {}  #lengths of the shortest paths to each node
     pred = {}  #predecessor node in each shortest path
@@ -181,6 +173,11 @@ def dijkstra(graph, source, destination=None):
 def shortest_path(graph, source, destination):
     """
     Finds shortest path from source to destination.
+
+    Parameters:
+        graph (dict): The network represented as a graph dictionary (ex.: the `Network.graph` attribute).
+        source (int): The unique id of a node in the network.
+        destination (int): The unique id of a node in the network.
     """
     dist, pred = dijkstra(graph, source, destination)
     end = destination
@@ -199,11 +196,12 @@ def neighborhood(network, from_id, hops=1, out=True):
     """
     Retrieves the nth neighborhood set (ids of nodes that are n hops away from from_id).
 
-    Input
-    network: Network object.
-    from_id: int (id of the source node).
-    hops: int (distance from the source in hops).
-    out: if False will use incoming links to the source instead of outgoing from the source. Default True.
+    Parameters:
+        network (Network): The reference network to perform the operation on.
+        graph (dict): The network represented as a graph dictionary (ex.: the `Network.graph` attribute).
+        from_id (int): The unique id of a node in the network.
+        hops (int): The distance from the source in hops.
+        out (bool): If False will use incoming links to the source instead of outgoing. Default True.
     """
     visited = set([from_id])
     queue = deque([from_id, None])
@@ -234,10 +232,10 @@ def links_from_node_id(network, node_id, out=True):
     """
     Retrieves a list of Link objects from/to a Node with id equal to node_id.
 
-    Input
-    network: Network object.
-    node_id: int representing the id of the source node.
-    out: if False will use incoming links to the source instead of outgoing from the source. Default True.
+    Parameters:
+        network (Network): The reference network to perform the operation on.
+        node_id (int): The unique id of a node in the network.
+        out (bool): If False will use incoming links to the source instead of outgoing. Default True.
     """
     links = []
     for link in network.links:
@@ -253,5 +251,10 @@ def links_from_node_id(network, node_id, out=True):
 def degree(network, node_id, out=True):
     """
     Returns the node degree. Being a directed graph, use argument `out` to use incoming or outgoing links.
+
+    Parameters:
+        network (Network): The reference network to perform the operation on.
+        node_id (int): The unique id of a node in the network.
+        out (bool): If False will use incoming links to the source instead of outgoing. Default True.
     """
     return len(links_from_node_id(network, node_id, out=out))

@@ -1,15 +1,31 @@
 class Node():
-    def __init__(self, node_id=None, position=(.0,.0,.0), initial_charge=100.0, up_current=1.0, down_current=0.5, update_callback=None):
+    """ 
+    This class represents a node of a network and keeps its node state information.
+      
+    Attributes:
+            id (int): The id of the node. Should be unique among nodes within the same network.
+            position ((float, float, float)): The cartesian position of the node. Same as `(self.x, self.y, self.z)`.
+            x, y, z (float): Position of the node relative to each axis. Same as self.position[0], [1], and [2] respectively.
+            initial_charge (float): The initial state of charge of the battery, in Coulombs.
+            current_charge (float): The current state of charge of the battery, in Coulombs. At first is the same as `initial_charge`.
+            energy_fraction (float): The current remaining energy fraction of the battery [0, 1], calculated as `current_charge/initial_charge`.
+            up (float): The draining current in Amps when `is_current_up` is True.
+            down (float): The draining current in Amps when `is_current_up` is False.
+            is_node_up (bool): The state of the node, i.e. active (True) or inactive (False).
+            update_callback (pointer): Callback function called after `update` finished. Ex.: `self.update_callback(self)`.
+    """
+    def __init__(self, node_id=None, position=(.0,.0,.0), initial_charge=100.0, up=1.0, down=0.5, is_current_up=False, update_callback=None):
         """
         Creates a Node instance.
 
-        Input
-        node_id: int.
-        position: tuple of floats (x,y,z).
-        initial_charge: float (in units of charge - Coulombs)
-        up: float (draining current in Amps when node UP state is True).
-        down: float (draining current in Amps when node UP state is False).
-        update_callback: pointer to a function called after update_state.
+        Parameters:
+            node_id (int): The id of the node. Should be unique among nodes within the same network.
+            position ((float, float, float)): The cartesian position of the node. Same as `(self.x, self.y, self.z)`.
+            initial_charge (float): The initial state of charge of the battery, in Coulombs.
+            up (float): The draining current in Amps when `is_current_up` is True.
+            down (float): The draining current in Amps when `is_current_up` is False.
+            is_node_up (bool): The state of the node, i.e. active (True) or inactive (False).
+            update_callback (pointer): Callback function called after `update` finished. Ex.: `self.update_callback(self)`.
         """
         self.id=node_id
 
@@ -23,9 +39,9 @@ class Node():
         self.down = down_current
 
         # dictates which value of current will be drained
-        self.is_current_up = False
+        self.is_current_up = is_current_up
         
-        self._update_cb=update_callback
+        self.update_callback=update_callback
 
     @property
     def position(self):
@@ -36,11 +52,20 @@ class Node():
 
     @property
     def energy_fraction(self):
-        return self.current_charge/self.initial_charge
+        """
+        The remaining energy fraction of the node.
+        """
+        return self.current_charge / self.initial_charge
 
     def update(self, packet, link):
         """
         Updates the state of charge (remaining energy fraction and remaining charge) based on size of packet.
+
+        Parameters:
+            packet (dict): From a call to `parse_trace_line(line)`.
+            link (Link): The link which the packet is supposed to traverse.
+                         Usually the link itself calls this method passim its own pointer.
+                         Ex.: `self.to_node.update(packet, self)`.
         """
 
         current = self.down
@@ -65,4 +90,4 @@ class Node():
 
         # update position
         # notify callback function
-        if self._update_cb: self._update_cb(self)
+        if self.update_callback: self.update_callback(self)
