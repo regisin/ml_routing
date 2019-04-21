@@ -1,20 +1,25 @@
-class Node():
+class Node:
     """ 
     This class represents a node of a network and keeps its node state information.
       
     Attributes:
             id (int): The id of the node. Should be unique among nodes within the same network.
             position ((float, float, float)): The cartesian position of the node. Same as `(self.x, self.y, self.z)`.
-            x, y, z (float): Position of the node relative to each axis. Same as self.position[0], [1], and [2] respectively.
+            x, y, z (float): Position of the node relative to each axis.
+                                    Same as self.position[0], [1], and [2] respectively.
             initial_charge (float): The initial state of charge of the battery, in Coulombs.
-            current_charge (float): The current state of charge of the battery, in Coulombs. At first is the same as `initial_charge`.
-            energy_fraction (float): The current remaining energy fraction of the battery [0, 1], calculated as `current_charge/initial_charge`.
+            current_charge (float): The current state of charge of the battery, in Coulombs.
+                                    At first is the same as `initial_charge`.
+            energy_fraction (float): The current remaining energy fraction of the battery [0, 1],
+                                    calculated as `current_charge/initial_charge`.
             up (float): The draining current in Amps when `is_current_up` is True.
             down (float): The draining current in Amps when `is_current_up` is False.
             is_node_up (bool): The state of the node, i.e. active (True) or inactive (False).
-            update_callback (pointer): Callback function called after `update` finished. Ex.: `self.update_callback(self)`.
+            update_callback (pointer): Callback function called after `update`. Ex.: `self.update_callback(self)`.
     """
-    def __init__(self, node_id=None, position=(.0,.0,.0), initial_charge=100.0, up=1.0, down=0.5, is_current_up=False, update_callback=None):
+
+    def __init__(self, node_id=None, position=(.0, .0, .0), initial_charge=100.0, up=1.0, down=0.5, is_current_up=False,
+                 update_callback=None):
         """
         Creates a Node instance.
 
@@ -26,13 +31,13 @@ class Node():
             down (float): The draining current in Amps when `is_current_up` is False.
             flow_counter (int): The number of flows going through this node.
             is_node_up (bool): The state of the node, i.e. active (True) or inactive (False).
-            update_callback (pointer): Callback function called after `update` finished. Ex.: `self.update_callback(self)`.
+            update_callback (pointer): Callback function called after `update`. Ex.: `self.update_callback(self)`.
         """
-        self.id=node_id
+        self.id = node_id
 
-        self.x=position[0]
-        self.y=position[1]
-        self.z=position[2]
+        self.x = position[0]
+        self.y = position[1]
+        self.z = position[2]
 
         self.initial_charge = initial_charge
         self.current_charge = initial_charge
@@ -43,15 +48,17 @@ class Node():
 
         # dictates which value of current will be drained
         self.is_current_up = is_current_up
-        
-        self.update_callback=update_callback
+
+        self.current_recent_history = []
+
+        self.update_callback = update_callback
 
     @property
     def position(self):
         """
         Easy formatting for node's position
         """
-        return (self.x, self.y, self.z)
+        return self.x, self.y, self.z
 
     @property
     def energy_fraction(self):
@@ -59,6 +66,13 @@ class Node():
         The remaining energy fraction of the node.
         """
         return self.current_charge / self.initial_charge
+
+    def reset(self):
+        """
+        Resets the state of the node to the initial values.
+        """
+        self.current_charge = self.initial_charge
+        self.flow_counter = 0
 
     def update(self, packet, link):
         """
@@ -78,12 +92,14 @@ class Node():
         current_charge = self.current_charge
 
         # calculate delta time based on packet size and datarate
-        datarate = link.datarate
         packet_size = packet['size']
-        t = (packet_size * 8) / (datarate * 1000000) # seconds
+        t = (packet_size * 8) / (link.datarate * 1000000)  # seconds
 
         # amount of coulombs consumed
         amount_to_decrease = (t * current)
+
+        # energy slope
+        slope = amount_to_decrease / t
 
         # update state of charge
         self.current_charge = current_charge - amount_to_decrease
@@ -93,4 +109,5 @@ class Node():
 
         # update position
         # notify callback function
-        if self.update_callback: self.update_callback(self)
+        if self.update_callback:
+            self.update_callback(self)

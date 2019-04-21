@@ -118,6 +118,15 @@ class Network():
                 return link
         return None
 
+    def reset(self):
+        """
+        Resets the state of the network (nodes and links) to the initial values.
+        """
+        for n in self.nodes:
+            n.reset()
+        for link in self.links:
+            link.update(None)
+
     def update_with_packets(self, packets):
         """
         Updates the state of the network by updating each individual link for each packet in the list. Useful for multi-flow scenarios.

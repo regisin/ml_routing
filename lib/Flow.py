@@ -1,6 +1,89 @@
 from lib.utils import parse_trace_line
 
-class TraceFlow():
+from random import randint, choice
+
+
+class Flow:
+    """
+    Template class that represents a data flow in the network.
+    """
+    def __init__(self, from_node, to_node):
+        raise NotImplementedError
+
+    @property
+    def current_packet(self):
+        """
+        Returns the current packet in the pipeline.
+        """
+        raise NotImplementedError
+
+    @property
+    def packets_left(self):
+        """
+        The number of packets left (including the `current_frame`).
+        """
+        raise NotImplementedError
+
+    @property
+    def has_packets_left(self):
+        """
+        Returns True if there are more packets left, False otherwise.
+        """
+        raise NotImplementedError
+
+    def next(self):
+        """
+        Increases the `current_index` by 1 and return the next frame in the list.
+        """
+        raise NotImplementedError
+
+
+class RandomFlow(Flow):
+    """
+    Represents an infinite data flow.
+    """
+    def __init__(self, from_node, to_node, min_size=500, max_size=3000, time_interval=100, type_list=None):
+        self.from_node = from_node
+        self.to_node = to_node
+        self.max_size = max_size
+        self.min_size = min_size
+        self.type_list = type_list
+        self.time_interval = time_interval
+        self.type_list = ['I', 'P', 'B']
+        if type_list is not None:
+            self.type_list = type_list
+        self.current_index = -1
+        self.next()
+
+    @property
+    def packets_left(self):
+        """
+        Always has another packet to generate. Returns always >= 1.
+        """
+        return 1
+
+    @property
+    def has_packets_left(self):
+        """
+        Always has another packet to generate.
+        """
+        return True
+
+    def next(self):
+        """
+        Generates a new random packet.
+        """
+        self.current_index += 1
+        self.current_packet = {
+            'index': int(self.current_index),
+            'size': int(randint(self.min_size, self.max_size)),
+            'type': choice(self.type_list),
+            'time': int(self.current_index * self.time_interval),
+        }
+        return self.current_packet
+
+
+class TraceFlow(Flow):
     """ 
     This class represents a data flow in the network.
 
@@ -52,7 +135,7 @@ class TraceFlow():
         """
         Returns True if there are more packets left, False otherwise.
         """
-        return (self.packets_left > 0)
+        return self.packets_left > 0
 
     def next(self):
         """

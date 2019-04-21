@@ -1,6 +1,7 @@
 from lib.utils import distance
 
-class Link():
+
+class Link:
     """ 
     This is a class represents a link of a network and keeps its link state information.
       
@@ -37,7 +38,8 @@ class Link():
         """
         The current distance between the nodes of this link.
         """
-        return distance((self.from_node.x, self.from_node.y, self.from_node.z), (self.to_node.x, self.to_node.y, self.to_node.z))
+        return distance((self.from_node.x, self.from_node.y, self.from_node.z),
+                        (self.to_node.x, self.to_node.y, self.to_node.z))
 
     def update_metric(self):
         """
@@ -53,6 +55,6 @@ class Link():
             packet (dict): From a call to `parse_trace_line(line)`.
         """
         self.update_metric()
-        if packet != None:
+        if packet is not None:
             self.from_node.update(packet, self)
             self.to_node.update(packet, self)
