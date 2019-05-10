@@ -1,4 +1,4 @@
-from lib.utils import parse_trace_line
+from .functions.util import parse_trace_line
 
 from random import randint, choice
 
@@ -53,6 +53,7 @@ class RandomFlow(Flow):
         if type_list is not None:
             self.type_list = type_list
         self.current_index = -1
+        self.kill_switch = False
         self.next()
 
     @property
@@ -67,7 +68,7 @@ class RandomFlow(Flow):
         """
         Always has another packet to generate.
         """
-        return True
+        return not self.kill_switch
 
     def next(self):
         """
@@ -108,6 +109,7 @@ class TraceFlow(Flow):
         self.trace_file = trace_file
         self.start_index = start_index
         self.current_index = start_index
+        self.kill_switch = False
         
         self._packets = []
         with open(trace_file) as f:
@@ -135,7 +137,7 @@ class TraceFlow(Flow):
         """
         Returns True if there are more packets left, False otherwise.
         """
-        return self.packets_left > 0
+        return self.packets_left > 0 and not self.kill_switch 
 
     def next(self):
         """
