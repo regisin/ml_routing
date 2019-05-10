@@ -1,4 +1,4 @@
-echo "train - 1 flow"
+echo "train - 1 flow(s)"
 python3 gen_train_nnx.py 1 -o tr1.csv &
 python3 gen_train_nnx.py 1 -o tr2.csv &
 wait
